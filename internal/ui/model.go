@@ -1,9 +1,12 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/ChrisUFO/Schoty/internal/config"
+	"github.com/ChrisUFO/Schoty/internal/providers"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -48,6 +51,8 @@ type Model struct {
 	RefreshInterval  time.Duration
 	ticker           *time.Ticker
 	quit             chan struct{}
+	providerList     []providers.Provider
+	refreshCmd       tea.Cmd
 }
 
 func NewModel() Model {
@@ -70,6 +75,11 @@ func NewModel() Model {
 }
 
 func (m *Model) Init() tea.Cmd {
+	cfg, err := config.LoadConfig()
+	if err == nil && cfg != nil {
+		m.providerList = CreateProvidersFromConfig(cfg)
+		m.Providers = GetDefaultProviderStates()
+	}
 	m.ticker = time.NewTicker(m.RefreshInterval)
 	return m.tickTimerCmd()
 }
@@ -95,6 +105,9 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				close(m.quit)
 			}
 			return m, tea.Quit
+		case "r":
+			m.handleKeyPress(msg)
+			return m, m.refreshAll()
 		default:
 			m.handleKeyPress(msg)
 		}
@@ -104,7 +117,11 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Height = msg.Height
 	case tickMsg:
 		m.LastRefresh = time.Now()
-		return m, m.tickTimerCmd()
+		return m, m.refreshAll()
+	case refreshResultMsg:
+		results := []ProviderResult(msg)
+		m.Providers = ProviderResultsToStates(results)
+		return m, nil
 	}
 	return m, nil
 }
@@ -168,11 +185,18 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 
 type tickMsg time.Time
 
-func (m *Model) refreshAll() {
+func (m *Model) refreshAll() tea.Cmd {
 	for i := range m.Providers {
 		m.Providers[i].IsLoading = true
+		m.Providers[i].ErrorMsg = ""
+	}
+	return func() tea.Msg {
+		results := FetchAllProviders(context.Background(), m.providerList)
+		return refreshResultMsg(results)
 	}
 }
+
+type refreshResultMsg []ProviderResult
 
 func (m *Model) View() string {
 	if !m.Ready {
