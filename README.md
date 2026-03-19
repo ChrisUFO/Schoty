@@ -39,6 +39,11 @@ go build -o schoty
 
 Built with Go and [Bubble Tea](https://github.com/charmbracelet/bubbletea) for the TUI.
 
+## Documentation
+
+- [Architecture](ARCHITECTURE.md) - Project structure and design
+- [Roadmap](ROADMAP.md) - Development phases and progress
+
 ## License
 
 MIT
