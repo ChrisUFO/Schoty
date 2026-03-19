@@ -53,6 +53,8 @@ Schoty uses a `config.yaml` file for API keys. See [Architecture.md](ARCHITECTUR
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md) - Project structure and design
+- [UI/UX Specification](UIUX.md) - TUI layout, navigation, and interaction design
+- [Style Guide](STYLEGUIDE.md) - Visual design system and Lip Gloss styling
 - [Roadmap](ROADMAP.md) - Development phases and progress
 
 ## Contributing
