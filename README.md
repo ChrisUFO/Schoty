@@ -1,6 +1,18 @@
 # Schoty
 
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
+
 A TUI (Terminal User Interface) for monitoring AI subscription usage and API balances.
+
+<!-- Screenshot placeholder -->
+
+## Features
+
+- Real-time balance tracking for multiple AI providers
+- Subscription usage monitoring with quota alerts
+- Terminal-native TUI for fast, efficient workflow
+- Single dashboard view of all your AI service usages
 
 ## Supported Services
 
@@ -16,34 +28,37 @@ A TUI (Terminal User Interface) for monitoring AI subscription usage and API bal
 - **Z.ai (Coding Plan)** - Track Z.ai coding plan usage and limits
 - **MiniMax (Token Plan)** - Monitor MiniMax token plan consumption
 
-## Features
+## Prerequisites
 
-- Real-time balance tracking for multiple AI providers
-- Subscription usage monitoring with quota alerts
-- Terminal-native TUI for fast, efficient workflow
-- Single dashboard view of all your AI service usages
+- Go 1.21 or higher
 
-## Installation
+## Quick Start
 
 ```bash
 # Clone the repository
 git clone https://github.com/ChrisUFO/Schoty.git
 cd Schoty
 
-# Build and run
+# Build
 go build -o schoty
+
+# Run
 ./schoty
 ```
 
-## Tech Stack
+## Configuration
 
-Built with Go and [Bubble Tea](https://github.com/charmbracelet/bubbletea) for the TUI.
+Schoty uses a `config.yaml` file for API keys. See [Architecture.md](ARCHITECTURE.md) for configuration details.
 
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md) - Project structure and design
 - [Roadmap](ROADMAP.md) - Development phases and progress
 
+## Contributing
+
+Contributions welcome! Please feel free to submit a Pull Request.
+
 ## License
 
-MIT
+This project is licensed under the MIT License - see the LICENSE file for details.
