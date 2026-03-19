@@ -58,7 +58,10 @@ func applyEnvOverrides(cfg *Config) {
 }
 
 func normalizeEnvName(name string) string {
-	return strings.ToUpper(strings.ReplaceAll(name, "-", "_"))
+	name = strings.ReplaceAll(name, "-", "_")
+	name = strings.ReplaceAll(name, ".", "_")
+	name = strings.ReplaceAll(name, " ", "_")
+	return strings.ToUpper(name)
 }
 
 func GetProviderConfig(name string) *ProviderConfig {
