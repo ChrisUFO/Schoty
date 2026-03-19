@@ -63,6 +63,25 @@ Milestone 2 completes the TUI foundation by wiring up the re-render loop, implem
 - [x] Run full test suite: `go test ./...`
 - [x] Verify lint passes: `go vet ./...`
 
+### Phase 6: Structured Logging (COMPLETED - Issue #32)
+- [x] Add `log/slog` standard library for structured logging
+- [x] Replace `fmt.Fprintf` with structured log statements
+- [x] Add log levels (debug, info, warn, error)
+- [x] Add contextual fields (provider name, request duration, etc.)
+- [x] Create `internal/logging/logger.go` for centralized logger setup
+
+### Phase 7: Graceful Shutdown (COMPLETED - Issue #33)
+- [x] Add signal handling for SIGINT/SIGTERM
+- [x] Create shutdown channel to coordinate cleanup
+- [x] Stop ticker and cleanup resources on shutdown
+- [x] Handle shutdown in main.go before tea.Program.Start()
+
+### Phase 8: Help Flag (COMPLETED - Issue #35)
+- [x] Add `flag` package for CLI flag parsing
+- [x] Add `-h` and `--help` flags to main.go
+- [x] Display usage information and exit cleanly
+- [x] Suppress TUI startup when help is requested
+
 ## 3. Execution Checklist
 
 ### Git Operations (COMPLETED)
@@ -89,3 +108,13 @@ Milestone 2 completes the TUI foundation by wiring up the re-render loop, implem
 **Phase 5:**
 - `internal/ui/model_test.go` (NEW)
 - `go.mod`, `go.sum` (MODIFIED - added viper, testify deps)
+
+**Phase 6 (NEW):**
+- `internal/logging/logger.go` (NEW)
+- `cmd/schoty/main.go` (MODIFIED - add structured logging)
+
+**Phase 7 (NEW):**
+- `cmd/schoty/main.go` (MODIFIED - add signal handling)
+
+**Phase 8 (NEW):**
+- `cmd/schoty/main.go` (MODIFIED - add flag parsing for help)
