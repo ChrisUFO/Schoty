@@ -3,63 +3,34 @@
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Go Version](https://img.shields.io/badge/Go-1.21+-00ADD8.svg)
 
-A TUI (Terminal User Interface) for monitoring AI subscription usage and API balances.
+> **⚠️ This project is no longer being developed.**
 
-<!-- Screenshot placeholder -->
+## Why
 
-## Features
+Schoty was built to provide a unified terminal view of AI subscription usage and API balances across multiple providers. However, after research, we discovered that **OpenRouter is the only provider** that offers a public API endpoint for checking account balance/credits. All other providers (Anthropic, OpenAI, Codex, Z.ai, MiniMax, Together.ai) require manual dashboard checking - no public API exists for programmatic access.
 
-- Real-time balance tracking for multiple AI providers
-- Subscription usage monitoring with quota alerts
-- Terminal-native TUI for fast, efficient workflow
-- Single dashboard view of all your AI service usages
+Since the core value proposition was aggregating multiple providers in one view, and only OpenRouter supports this, the project does not provide sufficient value over using each provider's existing dashboard.
 
-## Supported Services
+## What Was Built
 
-### API Balance Monitoring
-- **Anthropic** - Track your Anthropic API credits and spending
-- **OpenAI** - Monitor your OpenAI API usage and remaining balance
-- **OpenRouter** - Keep an eye on your OpenRouter credits
-- **Together.ai** - Monitor your Together.ai API balance
+A functional TUI application with:
+- Bubble Tea-based terminal interface
+- Tab-based navigation (Dashboard, Detail, Config, Help)
+- Keyboard shortcuts (quit, refresh, tab switching, etc.)
+- Configuration loading with YAML and environment variable overrides
+- Structured logging
+- Graceful shutdown handling
 
-### Subscription Usage Monitoring
-- **Anthropic (Claude Code)** - Track Claude Code subscription usage and quota
-- **OpenAI (Codex)** - Monitor Codex subscription status and remaining calls
-- **Z.ai (Coding Plan)** - Track Z.ai coding plan usage and limits
-- **MiniMax (Token Plan)** - Monitor MiniMax token plan consumption
+## Project Status
 
-## Prerequisites
-
-- Go 1.21 or higher
-
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/ChrisUFO/Schoty.git
-cd Schoty
-
-# Build
-go build -o schoty
-
-# Run
-./schoty
-```
-
-## Configuration
-
-Schoty uses a `config.yaml` file for API keys. See [Architecture.md](ARCHITECTURE.md) for configuration details.
+**Archived** - This project is no longer actively maintained.
 
 ## Documentation
 
 - [Architecture](ARCHITECTURE.md) - Project structure and design
 - [UI/UX Specification](UIUX.md) - TUI layout, navigation, and interaction design
 - [Style Guide](STYLEGUIDE.md) - Visual design system and Lip Gloss styling
-- [Roadmap](ROADMAP.md) - Development phases and progress
-
-## Contributing
-
-Contributions welcome! Please feel free to submit a Pull Request.
+- [Roadmap](ROADMAP.md) - Development phases and research findings
 
 ## License
 
