@@ -5,6 +5,7 @@
 - [ ] Set up Bubble Tea with basic TUI skeleton
 - [ ] Add Lip Gloss for styling
 - [ ] Create `main.go` entry point
+- [ ] Add pre-commit and pre-push hooks with prettier and lint checks
 
 ## Milestone 2: TUI Foundation
 - [ ] Build basic navigation model (tabs or list selection)
