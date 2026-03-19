@@ -122,20 +122,6 @@ func SpinnerTick(frame int) string {
 	return SpinnerFrames[frame%len(SpinnerFrames)]
 }
 
-func ProgressBar(percent float64, width int) string {
-	if percent < 0 {
-		percent = 0
-	}
-	if percent > 100 {
-		percent = 100
-	}
-	filled := int(float64(width) * percent / 100)
-	empty := width - filled
-	filledStr := strings.Repeat("█", filled)
-	emptyStr := strings.Repeat("░", empty)
-	return fmt.Sprintf("%s%s %d%%", filledStr, emptyStr, int(percent))
-}
-
 func ProgressBarSimple(percent float64) string {
 	if percent < 0 {
 		percent = 0

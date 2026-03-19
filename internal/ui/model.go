@@ -17,6 +17,8 @@ const (
 	HelpView
 )
 
+const numTabs = 3
+
 type ProviderState struct {
 	Name         string
 	Balance      float64
