@@ -26,6 +26,7 @@ go.work
 go.work.sum
 
 # Local config files that shouldn't be shared
+config.yaml
 config.local.yaml
 config.local.yml
 
