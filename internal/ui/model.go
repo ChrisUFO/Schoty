@@ -66,7 +66,6 @@ type Model struct {
 }
 
 func NewModel() Model {
-	InitTheme()
 	return Model{
 		Ready:            false,
 		Width:            80,

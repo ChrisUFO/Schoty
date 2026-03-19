@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/ChrisUFO/Schoty/internal/logging"
@@ -15,6 +14,7 @@ import (
 )
 
 var (
+	version      = "dev"
 	helpFlag     = flag.Bool("h", false, "display help information")
 	helpFlagLong = flag.Bool("help", false, "display help information")
 	logLevel     = flag.String("log-level", "info", "set log level (debug, info, warn, error)")
@@ -31,7 +31,7 @@ func main() {
 	logging.Init(*logLevel)
 	logger := logging.With("component", "main")
 
-	logger.Info("starting schoty", "version", "0.1.0")
+	logger.Info("starting schoty", "version", version)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -39,17 +39,10 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-	var wg sync.WaitGroup
-	wg.Add(1)
-
 	go func() {
-		defer wg.Done()
-		select {
-		case sig := <-sigChan:
-			logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
-			cancel()
-		case <-ctx.Done():
-		}
+		sig := <-sigChan
+		logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
+		cancel()
 	}()
 
 	model := ui.NewModel()
@@ -61,9 +54,7 @@ func main() {
 	}
 
 	logger.Info("schoty exited successfully")
-
 	signal.Stop(sigChan)
-	wg.Wait()
 }
 
 func printHelp() {

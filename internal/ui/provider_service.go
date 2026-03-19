@@ -16,34 +16,51 @@ type ProviderResult struct {
 	Error   error
 }
 
+type providerMeta struct {
+	Name    string
+	Type    string
+	Factory func() providers.Provider
+}
+
+var allProviderMetas = []providerMeta{
+	{Name: "OpenAI", Type: ProviderTypeBalance, Factory: func() providers.Provider { return &providers.OpenAIProvider{} }},
+	{Name: "Anthropic", Type: ProviderTypeBalance, Factory: func() providers.Provider { return &providers.AnthropicProvider{} }},
+	{Name: "OpenRouter", Type: ProviderTypeBalance, Factory: func() providers.Provider { return &providers.OpenRouterProvider{} }},
+	{Name: "TogetherAI", Type: ProviderTypeBalance, Factory: func() providers.Provider { return &providers.TogetherAIProvider{} }},
+	{Name: "Claude Code", Type: ProviderTypeSubscription, Factory: func() providers.Provider { return &providers.ClaudeCodeProvider{} }},
+	{Name: "Codex", Type: ProviderTypeSubscription, Factory: func() providers.Provider { return &providers.CodexProvider{} }},
+	{Name: "Z.ai", Type: ProviderTypeSubscription, Factory: func() providers.Provider { return &providers.ZAIProvider{} }},
+	{Name: "MiniMax", Type: ProviderTypeSubscription, Factory: func() providers.Provider { return &providers.MiniMaxProvider{} }},
+}
+
+func GetAllProviderNames() []string {
+	names := make([]string, len(allProviderMetas))
+	for i, m := range allProviderMetas {
+		names[i] = m.Name
+	}
+	return names
+}
+
+func GetProviderMetaByName(name string) *providerMeta {
+	for i := range allProviderMetas {
+		if allProviderMetas[i].Name == name {
+			return &allProviderMetas[i]
+		}
+	}
+	return nil
+}
+
 func CreateProvidersFromConfig(cfg *config.Config) []providers.Provider {
 	var result []providers.Provider
 	for _, pcfg := range cfg.Providers {
 		if !pcfg.Enabled {
 			continue
 		}
-		var p providers.Provider
-		switch pcfg.Name {
-		case "OpenAI":
-			p = &providers.OpenAIProvider{}
-		case "Anthropic":
-			p = &providers.AnthropicProvider{}
-		case "OpenRouter":
-			p = &providers.OpenRouterProvider{}
-		case "TogetherAI":
-			p = &providers.TogetherAIProvider{}
-		case "Claude Code":
-			p = &providers.ClaudeCodeProvider{}
-		case "Codex":
-			p = &providers.CodexProvider{}
-		case "Z.ai":
-			p = &providers.ZAIProvider{}
-		case "MiniMax":
-			p = &providers.MiniMaxProvider{}
-		default:
+		meta := GetProviderMetaByName(pcfg.Name)
+		if meta == nil {
 			continue
 		}
-		result = append(result, p)
+		result = append(result, meta.Factory())
 	}
 	return result
 }
@@ -146,13 +163,11 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 }
 
 func GetDefaultProviderStates() []ProviderState {
-	providerNames := []string{"OpenAI", "Anthropic", "OpenRouter", "TogetherAI", "Claude Code", "Codex", "Z.ai", "MiniMax"}
-	providerTypes := []string{ProviderTypeBalance, ProviderTypeBalance, ProviderTypeBalance, ProviderTypeBalance, ProviderTypeSubscription, ProviderTypeSubscription, ProviderTypeSubscription, ProviderTypeSubscription}
-	states := make([]ProviderState, len(providerNames))
-	for i, name := range providerNames {
+	states := make([]ProviderState, len(allProviderMetas))
+	for i, meta := range allProviderMetas {
 		states[i] = ProviderState{
-			Name:         name,
-			Type:         providerTypes[i],
+			Name:         meta.Name,
+			Type:         meta.Type,
 			Status:       "loading",
 			IsLoading:    true,
 			IsConfigured: false,
@@ -173,23 +188,5 @@ func CalculateStatus(remaining, limit int) string {
 		return "warning"
 	default:
 		return "critical"
-	}
-}
-
-func RefreshWithTimeout(ctx context.Context, providerList []providers.Provider, timeout time.Duration) []ProviderResult {
-	ctx, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
-
-	resultChan := make(chan []ProviderResult, 1)
-
-	go func() {
-		resultChan <- FetchAllProviders(ctx, providerList)
-	}()
-
-	select {
-	case results := <-resultChan:
-		return results
-	case <-ctx.Done():
-		return []ProviderResult{}
 	}
 }
