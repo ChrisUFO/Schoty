@@ -108,16 +108,7 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 				state.Usage = r.Usage.Used
 				state.Remaining = r.Usage.Remaining
 				state.Limit = r.Usage.Limit
-				if state.Remaining > 0 && state.Limit > 0 {
-					percent := float64(state.Remaining*100) / float64(state.Limit)
-					if percent >= 50 {
-						state.Status = "healthy"
-					} else if percent >= 20 {
-						state.Status = "warning"
-					} else {
-						state.Status = "critical"
-					}
-				}
+				state.Status = CalculateStatus(state.Remaining, state.Limit)
 			}
 			if state.Type == "" {
 				state.Type = ProviderTypeBalance

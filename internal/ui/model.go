@@ -407,9 +407,8 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 			percent := float64(p.Remaining*100) / float64(p.Limit)
 			progressStr = ProgressBarSimple(percent)
 		} else {
-			valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
-			percent := float64(p.Remaining*100) / float64(p.Limit)
-			progressStr = ProgressBarSimple(percent)
+			valueStr = fmt.Sprintf("$%.2f", p.Balance)
+			progressStr = "---"
 		}
 	} else {
 		valueStr = CaptionStyle().Render("Not configured")
