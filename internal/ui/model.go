@@ -90,7 +90,9 @@ func (m *Model) Init() tea.Cmd {
 		logging.Error("failed to load config", "error", err)
 	} else if cfg != nil {
 		m.providerList = CreateProvidersFromConfig(cfg)
-		m.Providers = GetDefaultProviderStates()
+		if len(m.providerList) == 0 {
+			m.Providers = []ProviderState{}
+		}
 	}
 	m.ticker = time.NewTicker(m.RefreshInterval)
 	return m.tickTimerCmd()
@@ -479,7 +481,7 @@ func (m *Model) renderEmptyState() string {
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		Padding(3, 5).
-		Width(45).
+		Width(50).
 		Align(lipgloss.Center, lipgloss.Center).
 		BorderForeground(brandColor()).
 		Render(
@@ -487,8 +489,11 @@ func (m *Model) renderEmptyState() string {
 				lipgloss.Center,
 				BodyStyle().Render("No providers configured"),
 				"",
-				CaptionStyle().Render("Press [c] to add API keys"),
-				CaptionStyle().Render("and configure your providers"),
+				CaptionStyle().Render("Add providers by:"),
+				CaptionStyle().Render("  1. Creating config.yaml with provider settings"),
+				CaptionStyle().Render("  2. Or setting SCHOTY_<PROVIDER>_API_KEY env vars"),
+				"",
+				CaptionStyle().Render("See README.md for configuration details"),
 			),
 		)
 
