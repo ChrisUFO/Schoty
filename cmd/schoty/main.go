@@ -17,6 +17,8 @@ var (
 	version      = "dev"
 	helpFlag     = flag.Bool("h", false, "display help information")
 	helpFlagLong = flag.Bool("help", false, "display help information")
+	versionFlag  = flag.Bool("v", false, "display version information")
+	versionFlagL = flag.Bool("version", false, "display version information")
 	logLevel     = flag.String("log-level", "info", "set log level (debug, info, warn, error)")
 )
 
@@ -25,6 +27,11 @@ func main() {
 
 	if *helpFlag || *helpFlagLong {
 		printHelp()
+		os.Exit(0)
+	}
+
+	if *versionFlag || *versionFlagL {
+		printVersion()
 		os.Exit(0)
 	}
 
@@ -64,6 +71,10 @@ func main() {
 	signal.Stop(sigChan)
 }
 
+func printVersion() {
+	fmt.Printf("Schoty version %s\n", version)
+}
+
 func printHelp() {
 	fmt.Println(`Schoty - AI Subscription Usage Monitor
 
@@ -71,6 +82,7 @@ Usage: schoty [options]
 
 Options:
   -h, --help      display this help information
+  -v, --version   display version information
   --log-level     set log level: debug, info, warn, error (default: info)
 
 Keyboard Shortcuts (when running):
