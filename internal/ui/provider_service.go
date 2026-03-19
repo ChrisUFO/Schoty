@@ -95,6 +95,7 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 			state.ErrorMsg = r.Error.Error()
 		} else {
 			if r.Balance != nil {
+				state.Type = ProviderTypeBalance
 				state.Balance = r.Balance.Amount
 				if r.Balance.Amount > 0 {
 					state.Status = "healthy"
@@ -103,6 +104,7 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 				}
 			}
 			if r.Usage != nil {
+				state.Type = ProviderTypeSubscription
 				state.Usage = r.Usage.Used
 				state.Remaining = r.Usage.Remaining
 				state.Limit = r.Usage.Limit
@@ -117,6 +119,9 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 					}
 				}
 			}
+			if state.Type == "" {
+				state.Type = ProviderTypeBalance
+			}
 		}
 
 		states = append(states, state)
@@ -126,10 +131,12 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 
 func GetDefaultProviderStates() []ProviderState {
 	providerNames := []string{"OpenAI", "Anthropic", "OpenRouter", "TogetherAI", "Claude Code", "Codex", "Z.ai", "MiniMax"}
+	providerTypes := []string{ProviderTypeBalance, ProviderTypeBalance, ProviderTypeBalance, ProviderTypeBalance, ProviderTypeSubscription, ProviderTypeSubscription, ProviderTypeSubscription, ProviderTypeSubscription}
 	states := make([]ProviderState, len(providerNames))
 	for i, name := range providerNames {
 		states[i] = ProviderState{
 			Name:         name,
+			Type:         providerTypes[i],
 			Status:       "loading",
 			IsLoading:    true,
 			IsConfigured: false,

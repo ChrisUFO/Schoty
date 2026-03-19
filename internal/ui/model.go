@@ -23,10 +23,19 @@ const (
 const (
 	numTabs                = 3
 	DefaultRefreshInterval = 60 * time.Second
+	TabAPIBalances         = 0
+	TabSubscriptions       = 1
+	TabConfig              = 2
+)
+
+const (
+	ProviderTypeBalance      = "balance"
+	ProviderTypeSubscription = "subscription"
 )
 
 type ProviderState struct {
 	Name         string
+	Type         string
 	Balance      float64
 	Usage        int
 	Remaining    int
@@ -326,13 +335,33 @@ func (m *Model) renderDashboard() string {
 	)
 }
 
+func (m *Model) getFilteredProviders() []ProviderState {
+	var filtered []ProviderState
+	for _, p := range m.Providers {
+		switch m.Tab {
+		case TabAPIBalances:
+			if p.Type == ProviderTypeBalance || p.Type == "" {
+				filtered = append(filtered, p)
+			}
+		case TabSubscriptions:
+			if p.Type == ProviderTypeSubscription {
+				filtered = append(filtered, p)
+			}
+		default:
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered
+}
+
 func (m *Model) renderProviderList() string {
 	var rows []string
 
-	for i, p := range m.Providers {
+	filteredProviders := m.getFilteredProviders()
+	for i, p := range filteredProviders {
 		row := m.renderProviderRow(p, i)
 		rows = append(rows, row)
-		if i < len(m.Providers)-1 {
+		if i < len(filteredProviders)-1 {
 			rows = append(rows, "")
 		}
 	}
@@ -358,6 +387,13 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 
 	var valueStr string
 	var progressStr string
+	var label string
+
+	if p.Type == ProviderTypeSubscription {
+		label = "Subscription"
+	} else {
+		label = "API Balance"
+	}
 
 	if p.IsLoading {
 		valueStr = CaptionStyle().Render("Fetching...")
@@ -366,9 +402,15 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 		valueStr = ErrorStyle().Render(p.ErrorMsg)
 		progressStr = ""
 	} else if p.IsConfigured {
-		valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
-		percent := float64(p.Remaining*100) / float64(p.Limit)
-		progressStr = ProgressBarSimple(percent)
+		if p.Type == ProviderTypeSubscription {
+			valueStr = fmt.Sprintf("%d remaining", p.Remaining)
+			percent := float64(p.Remaining*100) / float64(p.Limit)
+			progressStr = ProgressBarSimple(percent)
+		} else {
+			valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
+			percent := float64(p.Remaining*100) / float64(p.Limit)
+			progressStr = ProgressBarSimple(percent)
+		}
 	} else {
 		valueStr = CaptionStyle().Render("Not configured")
 		progressStr = CaptionStyle().Render("—")
@@ -383,7 +425,7 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 
 	progress := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		"  "+CaptionStyle().Render("API Balance"),
+		"  "+CaptionStyle().Render(label),
 		"  "+CaptionStyle().Render(progressStr),
 	)
 
