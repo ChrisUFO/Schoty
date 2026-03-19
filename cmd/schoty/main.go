@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"github.com/ChrisUFO/Schoty/internal/logging"
@@ -38,10 +39,17 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	go func() {
-		sig := <-sigChan
-		logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
-		cancel()
+		defer wg.Done()
+		select {
+		case sig := <-sigChan:
+			logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
+			cancel()
+		case <-ctx.Done():
+		}
 	}()
 
 	model := ui.NewModel()
@@ -53,6 +61,9 @@ func main() {
 	}
 
 	logger.Info("schoty exited successfully")
+
+	signal.Stop(sigChan)
+	wg.Wait()
 }
 
 func printHelp() {

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/ChrisUFO/Schoty/internal/config"
+	"github.com/ChrisUFO/Schoty/internal/logging"
 	"github.com/ChrisUFO/Schoty/internal/providers"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -85,7 +86,9 @@ func NewModel() Model {
 
 func (m *Model) Init() tea.Cmd {
 	cfg, err := config.LoadConfig()
-	if err == nil && cfg != nil {
+	if err != nil {
+		logging.Error("failed to load config", "error", err)
+	} else if cfg != nil {
 		m.providerList = CreateProvidersFromConfig(cfg)
 		m.Providers = GetDefaultProviderStates()
 	}
@@ -147,8 +150,6 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 		} else {
 			m.CurrentView = ConfigView
 		}
-	case "r":
-		m.refreshAll()
 	case "tab":
 		m.Tab = (m.Tab + 1) % numTabs
 	case "1", "2", "3", "4", "5", "6", "7", "8":
@@ -355,9 +356,13 @@ func (m *Model) getFilteredProviders() []ProviderState {
 }
 
 func (m *Model) renderProviderList() string {
-	var rows []string
-
 	filteredProviders := m.getFilteredProviders()
+
+	if len(filteredProviders) == 0 {
+		return m.renderEmptyTabState()
+	}
+
+	var rows []string
 	for i, p := range filteredProviders {
 		row := m.renderProviderRow(p, i)
 		rows = append(rows, row)
@@ -377,6 +382,41 @@ func (m *Model) renderProviderList() string {
 		Align(lipgloss.Left, lipgloss.Top)
 
 	return contentStyle.Render(lines)
+}
+
+func (m *Model) renderEmptyTabState() string {
+	var message string
+	switch m.Tab {
+	case TabAPIBalances:
+		message = "No API Balance providers configured"
+	case TabSubscriptions:
+		message = "No Subscription providers configured"
+	default:
+		message = "No providers in this category"
+	}
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		Padding(3, 5).
+		Width(45).
+		Align(lipgloss.Center, lipgloss.Center).
+		BorderForeground(brandColor()).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				BodyStyle().Render(message),
+				"",
+				CaptionStyle().Render("Press [c] to configure providers"),
+			),
+		)
+
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(box)
+
+	return centered
 }
 
 func (m *Model) renderProviderRow(p ProviderState, idx int) string {
@@ -479,24 +519,46 @@ func (m *Model) renderDetailView() string {
 		Width(m.Width).
 		Render(header)
 
-	balance := fmt.Sprintf("Balance:     $%.2f", p.Balance)
-	usage := fmt.Sprintf("Usage:       %d / %d", p.Limit-p.Remaining, p.Limit)
-	remaining := fmt.Sprintf("Remaining:   %d", p.Remaining)
 	lastUpdated := fmt.Sprintf("Last Updated: %s", m.LastRefresh.Format("15:04:05"))
 
-	percent := float64(p.Remaining*100) / float64(p.Limit)
-	progress := ProgressBarSimple(percent)
-
-	details := lipgloss.JoinVertical(
-		lipgloss.Left,
-		BodyStyle().Render(balance),
-		BodyStyle().Render(usage),
-		BodyStyle().Render(remaining),
-		"",
-		CaptionStyle().Render(progress),
-		"",
-		CaptionStyle().Render(lastUpdated),
-	)
+	var details string
+	if p.Type == ProviderTypeSubscription {
+		usage := fmt.Sprintf("Usage:       %d / %d", p.Usage, p.Limit)
+		remaining := fmt.Sprintf("Remaining:   %d", p.Remaining)
+		var progress string
+		if p.Limit > 0 {
+			percent := float64(p.Remaining*100) / float64(p.Limit)
+			progress = ProgressBarSimple(percent)
+		} else {
+			progress = "N/A"
+		}
+		details = lipgloss.JoinVertical(
+			lipgloss.Left,
+			BodyStyle().Render(usage),
+			BodyStyle().Render(remaining),
+			"",
+			CaptionStyle().Render(progress),
+			"",
+			CaptionStyle().Render(lastUpdated),
+		)
+	} else {
+		balance := fmt.Sprintf("Balance:     $%.2f", p.Balance)
+		var statusStr string
+		if p.Balance > 0 {
+			statusStr = "Available"
+		} else if p.Balance == 0 {
+			statusStr = "No credit remaining"
+		} else {
+			statusStr = "Overage"
+		}
+		details = lipgloss.JoinVertical(
+			lipgloss.Left,
+			BodyStyle().Render(balance),
+			BodyStyle().Render(fmt.Sprintf("Status:      %s", statusStr)),
+			"",
+			CaptionStyle().Render(lastUpdated),
+		)
+	}
 
 	back := CaptionStyle().Render("[←] Back   [r] Refresh   [e] Edit Config")
 
@@ -627,7 +689,18 @@ Views:
 }
 
 func (m *Model) renderFooter() string {
-	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %d providers", len(m.Providers))
+	var providerCount string
+	if m.CurrentView == DashboardView {
+		filtered := m.getFilteredProviders()
+		if len(filtered) == len(m.Providers) {
+			providerCount = fmt.Sprintf("%d providers", len(m.Providers))
+		} else {
+			providerCount = fmt.Sprintf("%d of %d providers", len(filtered), len(m.Providers))
+		}
+	} else {
+		providerCount = fmt.Sprintf("%d providers", len(m.Providers))
+	}
+	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %s", providerCount)
 	return lipgloss.NewStyle().
 		Background(headerBgColor()).
 		Foreground(secondaryColor()).

@@ -49,6 +49,31 @@ func CreateProvidersFromConfig(cfg *config.Config) []providers.Provider {
 }
 
 func FetchAllProviders(ctx context.Context, providerList []providers.Provider) []ProviderResult {
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	resultChan := make(chan []ProviderResult, 1)
+
+	go func() {
+		resultChan <- fetchProvidersInternal(providerList)
+	}()
+
+	select {
+	case results := <-resultChan:
+		return results
+	case <-ctx.Done():
+		timeoutResults := make([]ProviderResult, len(providerList))
+		for i, p := range providerList {
+			timeoutResults[i] = ProviderResult{
+				Name:  p.Name(),
+				Error: ctx.Err(),
+			}
+		}
+		return timeoutResults
+	}
+}
+
+func fetchProvidersInternal(providerList []providers.Provider) []ProviderResult {
 	var wg sync.WaitGroup
 	results := make([]ProviderResult, len(providerList))
 

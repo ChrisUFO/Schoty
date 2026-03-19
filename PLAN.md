@@ -82,6 +82,14 @@ Milestone 2 completes the TUI foundation by wiring up the re-render loop, implem
 - [x] Display usage information and exit cleanly
 - [x] Suppress TUI startup when help is requested
 
+### Phase 9: Hardening & Polish (COMPLETED)
+- [x] Fix division by zero in Detail View for balance providers
+- [x] Fix Detail View data mismatch (balance vs subscription rendering)
+- [x] Add empty tab state message when no providers in filtered view
+- [x] Add 30s network timeout to FetchAllProviders
+- [x] Fix footer to show filtered provider count ("X of Y providers")
+- [x] Fix signal handler goroutine cleanup with sync.WaitGroup
+
 ## 3. Execution Checklist
 
 ### Git Operations (COMPLETED)
@@ -118,3 +126,8 @@ Milestone 2 completes the TUI foundation by wiring up the re-render loop, implem
 
 **Phase 8 (NEW):**
 - `cmd/schoty/main.go` (MODIFIED - add flag parsing for help)
+
+**Phase 9:**
+- `internal/ui/model.go` (MODIFIED - detail view fixes, empty tab state, footer count)
+- `internal/ui/provider_service.go` (MODIFIED - add timeout to FetchAllProviders)
+- `cmd/schoty/main.go` (MODIFIED - signal handler cleanup)
