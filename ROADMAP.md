@@ -5,13 +5,19 @@
 - [ ] Set up Bubble Tea with basic TUI skeleton
 - [ ] Add Lip Gloss for styling
 - [ ] Create `main.go` entry point
-- [ ] Add pre-commit and pre-push hooks with prettier and lint checks
+- [ ] Add pre-commit and pre-push hooks with prettier, lint checks, and tests
+- [ ] Add Makefile for standardized build/run commands
+- [ ] Add .editorconfig for consistent editor settings
 
 ## Milestone 2: TUI Foundation
 - [ ] Build basic navigation model (tabs or list selection)
 - [ ] Create main dashboard layout
 - [ ] Add keyboard navigation (quit, refresh, tab switching)
 - [ ] Wire up re-render loop
+- [ ] Implement structured logging
+- [ ] Add graceful shutdown handling (SIGINT/SIGTERM)
+- [ ] Add version flag (-v, --version)
+- [ ] Add help flag (-h, --help)
 
 ## Milestone 3: Configuration Layer
 - [ ] Define `config.yaml` structure for API keys
