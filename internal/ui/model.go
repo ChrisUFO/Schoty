@@ -123,7 +123,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			return m, tea.Quit
 		case "r":
-			m.handleKeyPress(msg)
 			return m, m.refreshAll()
 		default:
 			m.handleKeyPress(msg)

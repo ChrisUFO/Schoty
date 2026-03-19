@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+type contextKey string
+
+const loggerContextKey contextKey = "logger"
+
 var defaultLogger *slog.Logger
 
 func Init(level string) {
@@ -75,11 +79,11 @@ func With(args ...any) *slog.Logger {
 }
 
 func WithContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, "logger", defaultLogger)
+	return context.WithValue(ctx, loggerContextKey, defaultLogger)
 }
 
 func FromContext(ctx context.Context) *slog.Logger {
-	if logger, ok := ctx.Value("logger").(*slog.Logger); ok {
+	if logger, ok := ctx.Value(loggerContextKey).(*slog.Logger); ok {
 		return logger
 	}
 	return defaultLogger

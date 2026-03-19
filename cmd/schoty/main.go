@@ -39,10 +39,16 @@ func main() {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
+	done := make(chan struct{})
+
 	go func() {
-		sig := <-sigChan
-		logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
-		cancel()
+		select {
+		case sig := <-sigChan:
+			logger.Info("received signal, initiating graceful shutdown", "signal", sig.String())
+			cancel()
+		case <-done:
+			return
+		}
 	}()
 
 	model := ui.NewModel()
@@ -54,6 +60,7 @@ func main() {
 	}
 
 	logger.Info("schoty exited successfully")
+	close(done)
 	signal.Stop(sigChan)
 }
 

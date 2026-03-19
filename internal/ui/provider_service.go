@@ -153,7 +153,7 @@ func ProviderResultsToStates(results []ProviderResult) []ProviderState {
 				state.Status = CalculateStatus(state.Remaining, state.Limit)
 			}
 			if state.Type == "" {
-				state.Type = ProviderTypeBalance
+				state.Type = "unknown"
 			}
 		}
 

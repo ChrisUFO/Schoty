@@ -61,7 +61,7 @@ func TestInvalidLogLevel(t *testing.T) {
 	assert.Contains(t, buf.String(), "test after invalid level")
 }
 
-func TestHelpFlag(t *testing.T) {
+func TestInfoLogging(t *testing.T) {
 	var buf bytes.Buffer
 	InitWithWriter(&buf, "info")
 
