@@ -19,26 +19,26 @@ All colors are optimized for dark terminal backgrounds. Most terminals use dark 
 
 ```go
 // Primary brand color for headers and emphasis
-var BrandColor = lipgloss.Color("#4DA6FF")
+var BrandColor = lipgloss.Color("#3B82F6")
 ```
 
 ### Status Colors
 
 ```go
 // Healthy status (>50% remaining)
-var StatusHealthy = lipgloss.Color("#00CC00")
+var StatusHealthy = lipgloss.Color("#22C55E")
 
 // Warning status (20-50% remaining)
-var StatusWarning = lipgloss.Color("#FFB300")
+var StatusWarning = lipgloss.Color("#F59E0B")
 
 // Critical status (<20% remaining)
-var StatusCritical = lipgloss.Color("#FF4444")
+var StatusCritical = lipgloss.Color("#EF4444")
 
 // Error status (API failure)
-var StatusError = lipgloss.Color("#AA66FF")
+var StatusError = lipgloss.Color("#EC4899")
 
 // Loading state
-var StatusLoading = lipgloss.Color("#999999")
+var StatusLoading = lipgloss.Color("#06B6D4")
 ```
 
 ### Background Colors
@@ -56,8 +56,8 @@ var CardBg = lipgloss.Color("#2D2D2D")
 // Text for dark terminals
 var TextPrimary = lipgloss.Color("#E5E5E5")
 var TextSecondary = lipgloss.Color("#AAAAAA")
-var TextMuted = lipgloss.Color("#888888")
-var TabInactive = lipgloss.Color("#888888")
+var TextMuted = lipgloss.Color("#9CA3AF")
+var TabInactive = lipgloss.Color("#6B7280")
 ```
 
 ## Typography Styles

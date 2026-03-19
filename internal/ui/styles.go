@@ -38,35 +38,35 @@ func secondaryColor() lipgloss.Color {
 }
 
 func mutedColor() lipgloss.Color {
-	return lipgloss.Color("#888888")
+	return lipgloss.Color("#9CA3AF")
 }
 
 func brandColor() lipgloss.Color {
-	return lipgloss.Color("#4DA6FF")
+	return lipgloss.Color("#3B82F6")
 }
 
 func tabInactiveColor() lipgloss.Color {
-	return lipgloss.Color("#888888")
+	return lipgloss.Color("#6B7280")
 }
 
 func statusHealthyColor() lipgloss.Color {
-	return lipgloss.Color("#00CC00")
+	return lipgloss.Color("#22C55E")
 }
 
 func statusWarningColor() lipgloss.Color {
-	return lipgloss.Color("#FFB300")
+	return lipgloss.Color("#F59E0B")
 }
 
 func statusCriticalColor() lipgloss.Color {
-	return lipgloss.Color("#FF4444")
+	return lipgloss.Color("#EF4444")
 }
 
 func statusErrorColor() lipgloss.Color {
-	return lipgloss.Color("#AA66FF")
+	return lipgloss.Color("#EC4899")
 }
 
 func statusLoadingColor() lipgloss.Color {
-	return lipgloss.Color("#999999")
+	return lipgloss.Color("#06B6D4")
 }
 
 func HeaderStyle() lipgloss.Style {
