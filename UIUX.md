@@ -253,6 +253,39 @@ Schoty is a terminal-native TUI application for monitoring AI subscription usage
 - Status perceivable without exact color distinction
 - All actions keyboard-accessible
 
+## Technical Implementation
+
+### Full-Window TUI Behavior
+
+Schoty takes over the entire terminal window using Bubble Tea's full-screen renderer:
+
+- **Renderer**: Uses Bubble Tea's built-in terminal renderer for ANSI/VT100 compatible terminals
+- **Window Size**: Dynamically adapts to terminal dimensions via `tea.WindowSizeMsg`
+- **Minimum Size**: Warns user if terminal is smaller than 60x10
+- **Resize Handling**: Re-renders automatically on window resize events
+- **Cursor**: Hidden during TUI display for cleaner appearance
+
+### Rendering Pipeline
+
+1. `tea.Program` initializes with `Model`
+2. `Model.Update()` handles window resize and keyboard events
+3. `Model.View()` renders the complete UI string for each frame
+4. Bubble Tea's renderer draws the UI and handles cursor management
+
+### Style Application
+
+Styles use the actual terminal dimensions:
+
+```go
+func (m *Model) appStyle() lipgloss.Style {
+    return lipgloss.NewStyle().
+        Width(m.Width).
+        Height(m.Height)
+}
+```
+
+Each component is styled relative to the current viewport, ensuring the UI fills the entire terminal.
+
 ## Future Enhancements
 
 - [ ] Customizable refresh intervals

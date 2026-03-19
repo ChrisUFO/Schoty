@@ -39,32 +39,33 @@ type Model struct {
 	LastRefresh      time.Time
 	Providers        []ProviderState
 	ShowHelp         bool
+	frame            int
 }
 
 func NewModel() Model {
 	InitTheme()
-	width, height := GetScreenSize()
 	return Model{
 		Ready:            false,
-		Width:            width,
-		Height:           height,
+		Width:            80,
+		Height:           24,
 		Tab:              0,
 		CurrentView:      DashboardView,
 		SelectedProvider: 0,
 		LastRefresh:      time.Now(),
 		Providers:        []ProviderState{},
 		ShowHelp:         false,
+		frame:            0,
 	}
 }
 
-func (m Model) Init() tea.Cmd {
+func (m *Model) Init() tea.Cmd {
 	return nil
 }
 
-func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		return m.handleKeyPress(msg)
+		m.handleKeyPress(msg)
 	case tea.WindowSizeMsg:
 		m.Ready = true
 		m.Width = msg.Width
@@ -75,10 +76,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 	switch msg.String() {
 	case "q", "ctrl+c":
-		return m, tea.Quit
+		return
 	case "?":
 		m.ShowHelp = !m.ShowHelp
 	case "c":
@@ -88,7 +89,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.CurrentView = ConfigView
 		}
 	case "r":
-		return m, m.refreshAll()
+		m.refreshAll()
 	case "tab":
 		m.Tab = (m.Tab + 1) % 3
 	case "1", "2", "3", "4", "5", "6", "7", "8":
@@ -130,30 +131,27 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.CurrentView = DetailView
 		}
 	}
-	return m, nil
 }
 
 type tickMsg time.Time
 
-func (m Model) refreshAll() tea.Cmd {
-	return func() tea.Msg {
-		time.Sleep(100 * time.Millisecond)
-		return tickMsg(time.Now())
+func (m *Model) refreshAll() {
+	for i := range m.Providers {
+		m.Providers[i].IsLoading = true
 	}
 }
 
-func (m Model) View() string {
+func (m *Model) View() string {
 	if !m.Ready {
-		return "Initializing Schoty..."
+		return lipgloss.NewStyle().
+			Width(m.Width).
+			Height(m.Height).
+			Align(lipgloss.Center, lipgloss.Center).
+			Render("Initializing Schoty...")
 	}
 
 	if m.Width < MinWidth || m.Height < 10 {
-		return lipgloss.JoinVertical(
-			lipgloss.Left,
-			HeaderStyle.Render("Schoty - AI Monitor"),
-			"",
-			ErrorStyle.Render("Terminal too small. Please resize to at least 60x10"),
-		)
+		return m.renderTooSmallView()
 	}
 
 	if m.ShowHelp {
@@ -170,31 +168,89 @@ func (m Model) View() string {
 	}
 }
 
-func (m Model) renderHeader() string {
+func (m *Model) appStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height)
+}
+
+func (m *Model) renderTooSmallView() string {
+	msg := ErrorStyle.Render("Terminal too small. Please resize to at least 60x10")
+	return lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(msg)
+}
+
+func (m *Model) renderHeader() string {
 	refreshStr := fmt.Sprintf("Last refresh: %s", m.LastRefresh.Format("15:04:05"))
-	headerContent := lipgloss.JoinHorizontal(
+	title := lipgloss.NewStyle().
+		Background(HeaderBgColor).
+		Foreground(TextPrimary).
+		Bold(true).
+		Padding(0, 1).
+		Render(" Schoty - AI Monitor ")
+
+	refresh := lipgloss.NewStyle().
+		Background(HeaderBgColor).
+		Foreground(TextSecondary).
+		Padding(0, 1).
+		Render(refreshStr)
+
+	content := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		HeaderStyle.Render("Schoty - AI Monitor"),
-		HeaderStyle.Width(m.Width-30).Render(refreshStr),
+		title,
+		refresh,
 	)
-	return headerContent
+
+	bordered := lipgloss.NewStyle().
+		Border(lipgloss.Border{Bottom: "─"}).
+		Width(m.Width).
+		Render(content)
+
+	return bordered
 }
 
-func (m Model) renderTabs() string {
-	tabs := []string{"[API Balances]", "[Subscriptions]", "[Config]"}
-	tabStr := ""
+func (m *Model) renderTabs() string {
+	tabs := []string{"API Balances", "Subscriptions", "Config"}
+	result := ""
+
 	for i, tab := range tabs {
-		if i == m.Tab {
-			tabStr += TabActiveStyle.Render(tab)
-		} else {
-			tabStr += TabInactiveStyle.Render(tab)
+		isActive := i == m.Tab
+		bg := BrandColor
+		fg := BackgroundColor
+		if !isActive {
+			bg = BackgroundColor
+			fg = TabInactive
 		}
-		tabStr += " "
+		style := lipgloss.NewStyle().
+			Background(bg).
+			Foreground(fg).
+			Padding(0, 2).
+			Bold(isActive)
+
+		bracketFg := BrandColor
+		if isActive {
+			bracketFg = BackgroundColor
+		}
+		bracketLeft := lipgloss.NewStyle().
+			Background(bg).
+			Foreground(bracketFg).
+			Render("[")
+
+		bracketRight := lipgloss.NewStyle().
+			Background(bg).
+			Foreground(bracketFg).
+			Render("]")
+
+		result += bracketLeft + style.Render(tab) + bracketRight + " "
 	}
-	return tabStr
+
+	return result
 }
 
-func (m Model) renderDashboard() string {
+func (m *Model) renderDashboard() string {
 	var content string
 
 	if len(m.Providers) == 0 {
@@ -203,71 +259,97 @@ func (m Model) renderDashboard() string {
 		content = m.renderProviderList()
 	}
 
-	footer := FooterStyle.Width(m.Width).Render(
-		fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %d providers", len(m.Providers)),
-	)
+	footer := m.renderFooter()
+
+	borderBox := lipgloss.NewStyle().
+		Border(lipgloss.Border{Top: "─"}).
+		Width(m.Width).
+		Render(footer)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.renderHeader(),
 		m.renderTabs(),
-		"",
 		content,
-		"",
-		footer,
+		borderBox,
 	)
 }
 
-func (m Model) renderProviderList() string {
-	var lines []string
+func (m *Model) renderProviderList() string {
+	var rows []string
 
 	for i, p := range m.Providers {
-		if p.IsLoading {
-			status := StatusIndicator("loading")
-			nameStyle := lipgloss.NewStyle().Foreground(TextSecondary)
-			lines = append(lines, fmt.Sprintf("%s %s  %s", status, nameStyle.Render(p.Name), CaptionStyle.Render("Fetching...")))
-		} else if p.ErrorMsg != "" {
-			status := StatusIndicator("error")
-			lines = append(lines, fmt.Sprintf("%s %s  %s", status, CardTitleStyle.Render(p.Name), ErrorStyle.Render(p.ErrorMsg)))
-		} else if p.IsConfigured {
-			status := StatusIndicator(p.Status)
-			balanceStr := fmt.Sprintf("$%.2f remaining", p.Balance)
-			progress := ProgressBarSimple(float64(p.Remaining*100) / float64(p.Limit))
-
-			row := lipgloss.JoinHorizontal(
-				lipgloss.Left,
-				status,
-				CardTitleStyle.Render(p.Name),
-				lipgloss.NewStyle().Width(15).Align(lipgloss.Right).Render(balanceStr),
-			)
-			lines = append(lines, row)
-			lines = append(lines, lipgloss.JoinHorizontal(
-				lipgloss.Left,
-				"  "+CaptionStyle.Render("API Balance"),
-				"  "+CaptionStyle.Render(progress),
-			))
-		} else {
-			status := StatusIndicator("loading")
-			lines = append(lines, fmt.Sprintf("%s %s  %s", status, CardTitleStyle.Render(p.Name), CaptionStyle.Render("Not configured")))
-		}
-
+		row := m.renderProviderRow(p, i)
+		rows = append(rows, row)
 		if i < len(m.Providers)-1 {
-			lines = append(lines, "")
+			rows = append(rows, "")
 		}
 	}
 
+	lines := lipgloss.JoinVertical(
+		lipgloss.Left,
+		rows...,
+	)
+
+	contentStyle := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Left, lipgloss.Top)
+
+	return contentStyle.Render(lines)
+}
+
+func (m *Model) renderProviderRow(p ProviderState, idx int) string {
+	status := StatusIndicator(p.Status)
+	nameStyle := lipgloss.NewStyle().Foreground(TextPrimary).Bold(idx == m.SelectedProvider)
+
+	name := nameStyle.Render(p.Name)
+
+	var valueStr string
+	var progressStr string
+
+	if p.IsLoading {
+		valueStr = CaptionStyle.Render("Fetching...")
+		progressStr = SpinnerTick(m.frame)
+	} else if p.ErrorMsg != "" {
+		valueStr = ErrorStyle.Render(p.ErrorMsg)
+		progressStr = ""
+	} else if p.IsConfigured {
+		valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
+		percent := float64(p.Remaining*100) / float64(p.Limit)
+		progressStr = ProgressBarSimple(percent)
+	} else {
+		valueStr = CaptionStyle.Render("Not configured")
+		progressStr = CaptionStyle.Render("—")
+	}
+
+	row := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		status,
+		" "+name,
+		lipgloss.NewStyle().Width(m.Width-40).Align(lipgloss.Right).Render(valueStr),
+	)
+
+	progress := lipgloss.JoinHorizontal(
+		lipgloss.Left,
+		"  "+CaptionStyle.Render("API Balance"),
+		"  "+CaptionStyle.Render(progressStr),
+	)
+
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		lines...,
+		row,
+		progress,
 	)
 }
 
-func (m Model) renderEmptyState() string {
-	emptyBox := lipgloss.NewStyle().
+func (m *Model) renderEmptyState() string {
+	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Padding(2, 4).
-		Width(40).
-		Align(lipgloss.Center).
+		Padding(3, 5).
+		Width(45).
+		Align(lipgloss.Center, lipgloss.Center).
+		BorderForeground(BrandColor).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
@@ -278,14 +360,16 @@ func (m Model) renderEmptyState() string {
 			),
 		)
 
-	return lipgloss.JoinVertical(
-		lipgloss.Center,
-		"",
-		emptyBox,
-	)
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(box)
+
+	return centered
 }
 
-func (m Model) renderDetailView() string {
+func (m *Model) renderDetailView() string {
 	if m.SelectedProvider >= len(m.Providers) {
 		m.CurrentView = DashboardView
 		return m.renderDashboard()
@@ -293,71 +377,111 @@ func (m Model) renderDetailView() string {
 
 	p := m.Providers[m.SelectedProvider]
 
-	header := CardTitleStyle.Render(p.Name)
-	balance := fmt.Sprintf("Balance: $%.2f", p.Balance)
-	usage := fmt.Sprintf("Usage: %d / %d", p.Limit-p.Remaining, p.Limit)
-	remaining := fmt.Sprintf("Remaining: %d", p.Remaining)
+	header := lipgloss.NewStyle().
+		Foreground(BrandColor).
+		Bold(true).
+		Render(fmt.Sprintf(" %s ", p.Name))
+
+	borderTop := lipgloss.NewStyle().
+		Border(lipgloss.Border{Bottom: "─"}).
+		Width(m.Width).
+		Render(header)
+
+	balance := fmt.Sprintf("Balance:     $%.2f", p.Balance)
+	usage := fmt.Sprintf("Usage:       %d / %d", p.Limit-p.Remaining, p.Limit)
+	remaining := fmt.Sprintf("Remaining:   %d", p.Remaining)
 	lastUpdated := fmt.Sprintf("Last Updated: %s", m.LastRefresh.Format("15:04:05"))
 
-	content := lipgloss.JoinVertical(
+	percent := float64(p.Remaining*100) / float64(p.Limit)
+	progress := ProgressBarSimple(percent)
+
+	details := lipgloss.JoinVertical(
 		lipgloss.Left,
-		header,
-		"",
 		BodyStyle.Render(balance),
 		BodyStyle.Render(usage),
 		BodyStyle.Render(remaining),
 		"",
+		CaptionStyle.Render(progress),
+		"",
 		CaptionStyle.Render(lastUpdated),
 	)
 
-	back := CaptionStyle.Render("[←] Back  [r] Refresh  [e] Edit Config")
+	back := CaptionStyle.Render("[←] Back   [r] Refresh   [e] Edit Config")
 
-	footer := FooterStyle.Width(m.Width).Render(
-		fmt.Sprintf("[q] quit  [esc] back  [r] refresh  [?] help"),
+	content := lipgloss.JoinVertical(
+		lipgloss.Left,
+		borderTop,
+		"",
+		details,
+		"",
+		"",
+		back,
 	)
+
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(content)
+
+	footer := m.renderFooter()
+
+	borderFooter := lipgloss.NewStyle().
+		Border(lipgloss.Border{Top: "─"}).
+		Width(m.Width).
+		Render(footer)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.renderHeader(),
 		m.renderTabs(),
-		"",
-		content,
-		"",
-		back,
-		"",
-		footer,
+		centered,
+		borderFooter,
 	)
 }
 
-func (m Model) renderConfigView() string {
-	title := CardTitleStyle.Render("Configuration")
+func (m *Model) renderConfigView() string {
+	title := lipgloss.NewStyle().
+		Foreground(BrandColor).
+		Bold(true).
+		Render(" Configuration ")
+
+	borderTop := lipgloss.NewStyle().
+		Border(lipgloss.Border{Bottom: "─"}).
+		Width(m.Width).
+		Render(title)
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
 		"",
 		BodyStyle.Render("Provider configuration"),
 		CaptionStyle.Render("(Coming in Milestone 3)"),
 	)
 
-	footer := FooterStyle.Width(m.Width).Render(
-		fmt.Sprintf("[q] quit  [esc] back  [?] help"),
-	)
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(content)
+
+	footer := m.renderFooter()
+
+	borderFooter := lipgloss.NewStyle().
+		Border(lipgloss.Border{Top: "─"}).
+		Width(m.Width).
+		Render(footer)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		m.renderHeader(),
+		borderTop,
 		m.renderTabs(),
-		"",
-		content,
-		"",
-		footer,
+		centered,
+		borderFooter,
 	)
 }
 
-func (m Model) renderHelpView() string {
-	helpText := `
-Keyboard Shortcuts:
+func (m *Model) renderHelpView() string {
+	helpText := `Keyboard Shortcuts:
 
 Global:
   q, ctrl+c    Quit application
@@ -374,12 +498,12 @@ Navigation:
 Views:
   enter        Open detail view
   esc          Go back / close
-  d            Toggle detail mode
-`
+  d            Toggle detail mode`
 
 	helpBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		Padding(2, 4).
+		BorderForeground(BrandColor).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
@@ -388,16 +512,34 @@ Views:
 			),
 		)
 
-	footer := FooterStyle.Width(m.Width).Render(
-		fmt.Sprintf("[q] quit  [esc] close help"),
-	)
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-4).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(helpBox)
+
+	footer := m.renderFooter()
+
+	borderFooter := lipgloss.NewStyle().
+		Border(lipgloss.Border{Top: "─"}).
+		Width(m.Width).
+		Render(footer)
 
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		m.renderHeader(),
 		"",
-		helpBox,
-		"",
-		footer,
+		centered,
+		borderFooter,
 	)
+}
+
+func (m *Model) renderFooter() string {
+	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %d providers", len(m.Providers))
+	return lipgloss.NewStyle().
+		Background(HeaderBgColor).
+		Foreground(TextSecondary).
+		Width(m.Width).
+		Padding(0, 1).
+		Render(status)
 }
