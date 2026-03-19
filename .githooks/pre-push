@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+echo "Running pre-push checks..."
+
+echo "Vetting code..."
+go vet ./...
+
+echo "Running full test suite..."
+go test -v ./...
+
+echo "Pre-push checks passed!"

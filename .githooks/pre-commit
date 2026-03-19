@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+echo "Running pre-commit checks..."
+
+echo "Formatting code..."
+go fmt ./...
+
+echo "Vetting code..."
+go vet ./...
+
+echo "Pre-commit checks passed!"
