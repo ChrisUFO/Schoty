@@ -2,13 +2,31 @@ package ui
 
 import (
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+)
+
+const (
+	ScreenPadding    = 1
+	SectionGap       = 1
+	CardPaddingH     = 2
+	CardPaddingV     = 1
+	MinWidth         = 60
+	CardWidth        = 40
+	ProgressBarWidth = 10
 )
 
 var IsDarkMode bool
 
 func DetectColorMode() bool {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return true
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return true
+	}
 	return false
 }
 
@@ -73,7 +91,7 @@ var CardStyle = lipgloss.NewStyle().
 	Background(CardBgColor).
 	Border(lipgloss.RoundedBorder()).
 	Padding(1, 2).
-	Width(40)
+	Width(CardWidth)
 
 var CardTitleStyle = lipgloss.NewStyle().
 	Bold(true).
@@ -111,7 +129,25 @@ func ProgressBar(percent float64, width int) string {
 	if percent > 100 {
 		percent = 100
 	}
-	return fmt.Sprintf("%d%%", int(percent))
+	filled := int(float64(width) * percent / 100)
+	empty := width - filled
+	filledStr := strings.Repeat("█", filled)
+	emptyStr := strings.Repeat("░", empty)
+	return fmt.Sprintf("%s%s %d%%", filledStr, emptyStr, int(percent))
+}
+
+func ProgressBarSimple(percent float64) string {
+	if percent < 0 {
+		percent = 0
+	}
+	if percent > 100 {
+		percent = 100
+	}
+	filled := int(float64(ProgressBarWidth) * percent / 100)
+	empty := ProgressBarWidth - filled
+	filledStr := strings.Repeat("█", filled)
+	emptyStr := strings.Repeat("░", empty)
+	return fmt.Sprintf("%s%s %d%%", filledStr, emptyStr, int(percent))
 }
 
 func GetStatusColor(percent float64) lipgloss.Color {
@@ -123,4 +159,32 @@ func GetStatusColor(percent float64) lipgloss.Color {
 	default:
 		return StatusCritical
 	}
+}
+
+func StatusIndicator(state string) string {
+	style := lipgloss.NewStyle()
+	switch state {
+	case "healthy":
+		style.Foreground(StatusHealthy)
+		return style.Render("●")
+	case "warning":
+		style.Foreground(StatusWarning)
+		return style.Render("●")
+	case "critical":
+		style.Foreground(StatusCritical)
+		return style.Render("●")
+	case "error":
+		style.Foreground(StatusError)
+		return style.Render("✗")
+	case "loading":
+		style.Foreground(StatusLoading)
+		return style.Render("○")
+	default:
+		style.Foreground(StatusLoading)
+		return style.Render("○")
+	}
+}
+
+func GetScreenSize() (int, int) {
+	return 80, 24
 }

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/ChrisUFO/Schoty/internal/ui"
@@ -8,8 +9,11 @@ import (
 )
 
 func main() {
-	p := tea.NewProgram(ui.NewModel())
-	if _, err := p.Run(); err != nil {
+	model := ui.NewModel()
+	p := tea.NewProgram(model)
+
+	if err := p.Start(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error starting Schoty: %v\n", err)
 		os.Exit(1)
 	}
 }
