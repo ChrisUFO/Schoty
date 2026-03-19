@@ -17,7 +17,10 @@ const (
 	HelpView
 )
 
-const numTabs = 3
+const (
+	numTabs                = 3
+	DefaultRefreshInterval = 60 * time.Second
+)
 
 type ProviderState struct {
 	Name         string
@@ -42,6 +45,9 @@ type Model struct {
 	Providers        []ProviderState
 	ShowHelp         bool
 	frame            int
+	RefreshInterval  time.Duration
+	ticker           *time.Ticker
+	quit             chan struct{}
 }
 
 func NewModel() Model {
@@ -57,23 +63,48 @@ func NewModel() Model {
 		Providers:        []ProviderState{},
 		ShowHelp:         false,
 		frame:            0,
+		RefreshInterval:  DefaultRefreshInterval,
+		ticker:           nil,
+		quit:             make(chan struct{}),
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	m.ticker = time.NewTicker(m.RefreshInterval)
+	return m.tickTimerCmd()
+}
+
+func (m *Model) tickTimerCmd() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case <-m.ticker.C:
+			return tickMsg(time.Now())
+		case <-m.quit:
+			return nil
+		}
+	}
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		m.handleKeyPress(msg)
+		switch msg.String() {
+		case "q", "ctrl+c":
+			if m.ticker != nil {
+				m.ticker.Stop()
+				close(m.quit)
+			}
+			return m, tea.Quit
+		default:
+			m.handleKeyPress(msg)
+		}
 	case tea.WindowSizeMsg:
 		m.Ready = true
 		m.Width = msg.Width
 		m.Height = msg.Height
 	case tickMsg:
 		m.LastRefresh = time.Now()
+		return m, m.tickTimerCmd()
 	}
 	return m, nil
 }
