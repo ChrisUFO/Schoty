@@ -17,3 +17,18 @@ coverage.out
 
 .DS_Store
 Thumbs.db
+
+# Planning documents
+PLAN.md
+
+# Go workspace files
+go.work
+go.work.sum
+
+# Local config files that shouldn't be shared
+config.local.yaml
+config.local.yml
+
+# Terminal capture/output
+*.term
+*.session
