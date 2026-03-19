@@ -116,6 +116,10 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "ctrl+c":
 			if m.ticker != nil {
 				m.ticker.Stop()
+				select {
+				case <-m.ticker.C:
+				default:
+				}
 				close(m.quit)
 			}
 			return m, tea.Quit
@@ -478,24 +482,28 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 }
 
 func (m *Model) renderEmptyState() string {
+	title := BodyStyle().Bold(true).Render("No providers configured")
+	subtitle := CaptionStyle().Render("Add providers by:")
+	step1 := CaptionStyle().Render("1. Creating config.yaml with provider settings")
+	step2 := CaptionStyle().Render("2. Or setting SCHOTY_<PROVIDER>_API_KEY env vars")
+	footer := CaptionStyle().Render("See README.md for configuration details")
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		title,
+		"",
+		subtitle,
+		step1,
+		step2,
+		"",
+		footer,
+	)
+
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Padding(3, 5).
-		Width(50).
-		Align(lipgloss.Center, lipgloss.Center).
+		Padding(1, 2).
 		BorderForeground(brandColor()).
-		Render(
-			lipgloss.JoinVertical(
-				lipgloss.Center,
-				BodyStyle().Render("No providers configured"),
-				"",
-				CaptionStyle().Render("Add providers by:"),
-				CaptionStyle().Render("  1. Creating config.yaml with provider settings"),
-				CaptionStyle().Render("  2. Or setting SCHOTY_<PROVIDER>_API_KEY env vars"),
-				"",
-				CaptionStyle().Render("See README.md for configuration details"),
-			),
-		)
+		Render(content)
 
 	centered := lipgloss.NewStyle().
 		Width(m.Width).
