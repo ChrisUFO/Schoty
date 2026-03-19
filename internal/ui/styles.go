@@ -27,94 +27,213 @@ func DetectColorMode() bool {
 	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
 		return true
 	}
+	if os.Getenv("TERM") == "xterm-256color" || os.Getenv("TERM") == "screen-256color" {
+		return true
+	}
 	return false
 }
 
-var (
-	BackgroundColor = lipgloss.Color("#FFFFFF")
-	HeaderBgColor   = lipgloss.Color("#E5E5E5")
-	CardBgColor     = lipgloss.Color("#F5F5F5")
-	TextPrimary     = lipgloss.Color("#1A1A1A")
-	TextSecondary   = lipgloss.Color("#666666")
-	TextMuted       = lipgloss.Color("#999999")
-	BrandColor      = lipgloss.Color("#0066CC")
-	TabActive       = lipgloss.Color("#0066CC")
-	TabInactive     = lipgloss.Color("#666666")
-)
-
-var (
-	StatusHealthy  = lipgloss.Color("#008800")
-	StatusWarning  = lipgloss.Color("#CC8800")
-	StatusCritical = lipgloss.Color("#CC0000")
-	StatusError    = lipgloss.Color("#8800CC")
-	StatusLoading  = lipgloss.Color("#666666")
-)
-
-func InitTheme() {
-	IsDarkMode = DetectColorMode()
-	if IsDarkMode {
-		BackgroundColor = lipgloss.Color("#1A1A1A")
-		HeaderBgColor = lipgloss.Color("#2D2D2D")
-		CardBgColor = lipgloss.Color("#2D2D2D")
-		TextPrimary = lipgloss.Color("#E5E5E5")
-		TextSecondary = lipgloss.Color("#AAAAAA")
-		TextMuted = lipgloss.Color("#888888")
-		BrandColor = lipgloss.Color("#4DA6FF")
-		TabActive = lipgloss.Color("#4DA6FF")
-		TabInactive = lipgloss.Color("#888888")
-		StatusHealthy = lipgloss.Color("#00CC00")
-		StatusWarning = lipgloss.Color("#FFB300")
-		StatusCritical = lipgloss.Color("#FF4444")
-		StatusError = lipgloss.Color("#AA66FF")
-		StatusLoading = lipgloss.Color("#999999")
+func bgColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#1A1A1A")
 	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#1A1A1A")
+	}
+	return lipgloss.Color("#FFFFFF")
 }
 
-var HeaderStyle = lipgloss.NewStyle().
-	Background(HeaderBgColor).
-	Foreground(TextPrimary).
-	Padding(0, 1).
-	Bold(true)
+func fgColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#E5E5E5")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#E5E5E5")
+	}
+	return lipgloss.Color("#1A1A1A")
+}
 
-var TabActiveStyle = lipgloss.NewStyle().
-	Background(BrandColor).
-	Foreground(BackgroundColor).
-	Padding(0, 2).
-	Bold(true)
+func headerBgColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#2D2D2D")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#2D2D2D")
+	}
+	return lipgloss.Color("#E5E5E5")
+}
 
-var TabInactiveStyle = lipgloss.NewStyle().
-	Background(BackgroundColor).
-	Foreground(TabInactive).
-	Padding(0, 2)
+func cardBgColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#2D2D2D")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#2D2D2D")
+	}
+	return lipgloss.Color("#F5F5F5")
+}
 
-var CardStyle = lipgloss.NewStyle().
-	Background(CardBgColor).
-	Border(lipgloss.RoundedBorder()).
-	Padding(1, 2).
-	Width(CardWidth)
+func secondaryColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#AAAAAA")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#AAAAAA")
+	}
+	return lipgloss.Color("#666666")
+}
 
-var CardTitleStyle = lipgloss.NewStyle().
-	Bold(true).
-	Foreground(TextPrimary)
+func mutedColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#888888")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#888888")
+	}
+	return lipgloss.Color("#999999")
+}
 
-var CardValueStyle = lipgloss.NewStyle().
-	Foreground(TextPrimary).
-	Align(lipgloss.Right)
+func brandColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#4DA6FF")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#4DA6FF")
+	}
+	return lipgloss.Color("#0066CC")
+}
 
-var FooterStyle = lipgloss.NewStyle().
-	Background(HeaderBgColor).
-	Foreground(TextSecondary).
-	Padding(0, 1)
+func tabInactiveColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#888888")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#888888")
+	}
+	return lipgloss.Color("#666666")
+}
 
-var ErrorStyle = lipgloss.NewStyle().
-	Foreground(StatusError).
-	Italic(true)
+func statusHealthyColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#00CC00")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#00CC00")
+	}
+	return lipgloss.Color("#008800")
+}
 
-var BodyStyle = lipgloss.NewStyle().
-	Foreground(TextPrimary)
+func statusWarningColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#FFB300")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#FFB300")
+	}
+	return lipgloss.Color("#CC8800")
+}
 
-var CaptionStyle = lipgloss.NewStyle().
-	Foreground(TextMuted)
+func statusCriticalColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#FF4444")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#FF4444")
+	}
+	return lipgloss.Color("#CC0000")
+}
+
+func statusErrorColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#AA66FF")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#AA66FF")
+	}
+	return lipgloss.Color("#8800CC")
+}
+
+func statusLoadingColor() lipgloss.Color {
+	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
+		return lipgloss.Color("#999999")
+	}
+	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
+		return lipgloss.Color("#999999")
+	}
+	return lipgloss.Color("#666666")
+}
+
+func InitTheme() {
+	IsDarkMode = os.Getenv("TERM_PROGRAM") == "Apple_Terminal" ||
+		os.Getenv("ColorTerm") == "truecolor" ||
+		os.Getenv("ColorTerm") == "24bit"
+}
+
+func HeaderStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(headerBgColor()).
+		Foreground(fgColor()).
+		Padding(0, 1).
+		Bold(true)
+}
+
+func TabActiveStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(brandColor()).
+		Foreground(bgColor()).
+		Padding(0, 2).
+		Bold(true)
+}
+
+func TabInactiveStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(bgColor()).
+		Foreground(tabInactiveColor()).
+		Padding(0, 2)
+}
+
+func CardStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(cardBgColor()).
+		Border(lipgloss.RoundedBorder()).
+		Padding(1, 2).
+		Width(CardWidth)
+}
+
+func CardTitleStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Bold(true).
+		Foreground(fgColor())
+}
+
+func CardValueStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(fgColor()).
+		Align(lipgloss.Right)
+}
+
+func FooterStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Background(headerBgColor()).
+		Foreground(secondaryColor()).
+		Padding(0, 1)
+}
+
+func ErrorStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(statusErrorColor()).
+		Italic(true)
+}
+
+func BodyStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(fgColor())
+}
+
+func CaptionStyle() lipgloss.Style {
+	return lipgloss.NewStyle().
+		Foreground(mutedColor())
+}
 
 var SpinnerFrames = []string{"◐", "◓", "◑", "◒"}
 
@@ -139,11 +258,11 @@ func ProgressBarSimple(percent float64) string {
 func GetStatusColor(percent float64) lipgloss.Color {
 	switch {
 	case percent >= 50:
-		return StatusHealthy
+		return statusHealthyColor()
 	case percent >= 20:
-		return StatusWarning
+		return statusWarningColor()
 	default:
-		return StatusCritical
+		return statusCriticalColor()
 	}
 }
 
@@ -151,22 +270,22 @@ func StatusIndicator(state string) string {
 	style := lipgloss.NewStyle()
 	switch state {
 	case "healthy":
-		style.Foreground(StatusHealthy)
+		style.Foreground(statusHealthyColor())
 		return style.Render("●")
 	case "warning":
-		style.Foreground(StatusWarning)
+		style.Foreground(statusWarningColor())
 		return style.Render("●")
 	case "critical":
-		style.Foreground(StatusCritical)
+		style.Foreground(statusCriticalColor())
 		return style.Render("●")
 	case "error":
-		style.Foreground(StatusError)
+		style.Foreground(statusErrorColor())
 		return style.Render("✗")
 	case "loading":
-		style.Foreground(StatusLoading)
+		style.Foreground(statusLoadingColor())
 		return style.Render("○")
 	default:
-		style.Foreground(StatusLoading)
+		style.Foreground(statusLoadingColor())
 		return style.Render("○")
 	}
 }

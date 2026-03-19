@@ -1,2 +1,19 @@
+# Schoty binary
 schoty
+schoty.exe
 *.exe
+*.test
+coverage.out
+
+/vendor/
+/.env
+.env.*
+*.log
+
+/.idea/
+/.vscode/
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db

@@ -93,7 +93,7 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 	case "r":
 		m.refreshAll()
 	case "tab":
-		m.Tab = (m.Tab + 1) % 3
+		m.Tab = (m.Tab + 1) % numTabs
 	case "1", "2", "3", "4", "5", "6", "7", "8":
 		idx := int(msg.String()[0] - '1')
 		if idx < len(m.Providers) {
@@ -125,7 +125,7 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 			m.Tab--
 		}
 	case "right", "l":
-		if m.Tab < 2 {
+		if m.Tab < numTabs-1 {
 			m.Tab++
 		}
 	case "d":
@@ -170,14 +170,8 @@ func (m *Model) View() string {
 	}
 }
 
-func (m *Model) appStyle() lipgloss.Style {
-	return lipgloss.NewStyle().
-		Width(m.Width).
-		Height(m.Height)
-}
-
 func (m *Model) renderTooSmallView() string {
-	msg := ErrorStyle.Render("Terminal too small. Please resize to at least 60x10")
+	msg := ErrorStyle().Render("Terminal too small. Please resize to at least 60x10")
 	return lipgloss.NewStyle().
 		Width(m.Width).
 		Height(m.Height).
@@ -188,15 +182,15 @@ func (m *Model) renderTooSmallView() string {
 func (m *Model) renderHeader() string {
 	refreshStr := fmt.Sprintf("Last refresh: %s", m.LastRefresh.Format("15:04:05"))
 	title := lipgloss.NewStyle().
-		Background(HeaderBgColor).
-		Foreground(TextPrimary).
+		Background(headerBgColor()).
+		Foreground(fgColor()).
 		Bold(true).
 		Padding(0, 1).
 		Render(" Schoty - AI Monitor ")
 
 	refresh := lipgloss.NewStyle().
-		Background(HeaderBgColor).
-		Foreground(TextSecondary).
+		Background(headerBgColor()).
+		Foreground(secondaryColor()).
 		Padding(0, 1).
 		Render(refreshStr)
 
@@ -220,11 +214,11 @@ func (m *Model) renderTabs() string {
 
 	for i, tab := range tabs {
 		isActive := i == m.Tab
-		bg := BrandColor
-		fg := BackgroundColor
+		bg := brandColor()
+		fg := bgColor()
 		if !isActive {
-			bg = BackgroundColor
-			fg = TabInactive
+			bg = bgColor()
+			fg = tabInactiveColor()
 		}
 		style := lipgloss.NewStyle().
 			Background(bg).
@@ -232,9 +226,9 @@ func (m *Model) renderTabs() string {
 			Padding(0, 2).
 			Bold(isActive)
 
-		bracketFg := BrandColor
+		bracketFg := brandColor()
 		if isActive {
-			bracketFg = BackgroundColor
+			bracketFg = bgColor()
 		}
 		bracketLeft := lipgloss.NewStyle().
 			Background(bg).
@@ -303,7 +297,7 @@ func (m *Model) renderProviderList() string {
 
 func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 	status := StatusIndicator(p.Status)
-	nameStyle := lipgloss.NewStyle().Foreground(TextPrimary).Bold(idx == m.SelectedProvider)
+	nameStyle := lipgloss.NewStyle().Foreground(fgColor()).Bold(idx == m.SelectedProvider)
 
 	name := nameStyle.Render(p.Name)
 
@@ -311,18 +305,18 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 	var progressStr string
 
 	if p.IsLoading {
-		valueStr = CaptionStyle.Render("Fetching...")
+		valueStr = CaptionStyle().Render("Fetching...")
 		progressStr = SpinnerTick(m.frame)
 	} else if p.ErrorMsg != "" {
-		valueStr = ErrorStyle.Render(p.ErrorMsg)
+		valueStr = ErrorStyle().Render(p.ErrorMsg)
 		progressStr = ""
 	} else if p.IsConfigured {
 		valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
 		percent := float64(p.Remaining*100) / float64(p.Limit)
 		progressStr = ProgressBarSimple(percent)
 	} else {
-		valueStr = CaptionStyle.Render("Not configured")
-		progressStr = CaptionStyle.Render("—")
+		valueStr = CaptionStyle().Render("Not configured")
+		progressStr = CaptionStyle().Render("—")
 	}
 
 	row := lipgloss.JoinHorizontal(
@@ -334,8 +328,8 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 
 	progress := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		"  "+CaptionStyle.Render("API Balance"),
-		"  "+CaptionStyle.Render(progressStr),
+		"  "+CaptionStyle().Render("API Balance"),
+		"  "+CaptionStyle().Render(progressStr),
 	)
 
 	return lipgloss.JoinVertical(
@@ -351,14 +345,14 @@ func (m *Model) renderEmptyState() string {
 		Padding(3, 5).
 		Width(45).
 		Align(lipgloss.Center, lipgloss.Center).
-		BorderForeground(BrandColor).
+		BorderForeground(brandColor()).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Center,
-				BodyStyle.Render("No providers configured"),
+				BodyStyle().Render("No providers configured"),
 				"",
-				CaptionStyle.Render("Press [c] to add API keys"),
-				CaptionStyle.Render("and configure your providers"),
+				CaptionStyle().Render("Press [c] to add API keys"),
+				CaptionStyle().Render("and configure your providers"),
 			),
 		)
 
@@ -380,7 +374,7 @@ func (m *Model) renderDetailView() string {
 	p := m.Providers[m.SelectedProvider]
 
 	header := lipgloss.NewStyle().
-		Foreground(BrandColor).
+		Foreground(brandColor()).
 		Bold(true).
 		Render(fmt.Sprintf(" %s ", p.Name))
 
@@ -399,16 +393,16 @@ func (m *Model) renderDetailView() string {
 
 	details := lipgloss.JoinVertical(
 		lipgloss.Left,
-		BodyStyle.Render(balance),
-		BodyStyle.Render(usage),
-		BodyStyle.Render(remaining),
+		BodyStyle().Render(balance),
+		BodyStyle().Render(usage),
+		BodyStyle().Render(remaining),
 		"",
-		CaptionStyle.Render(progress),
+		CaptionStyle().Render(progress),
 		"",
-		CaptionStyle.Render(lastUpdated),
+		CaptionStyle().Render(lastUpdated),
 	)
 
-	back := CaptionStyle.Render("[←] Back   [r] Refresh   [e] Edit Config")
+	back := CaptionStyle().Render("[←] Back   [r] Refresh   [e] Edit Config")
 
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -444,7 +438,7 @@ func (m *Model) renderDetailView() string {
 
 func (m *Model) renderConfigView() string {
 	title := lipgloss.NewStyle().
-		Foreground(BrandColor).
+		Foreground(brandColor()).
 		Bold(true).
 		Render(" Configuration ")
 
@@ -456,8 +450,8 @@ func (m *Model) renderConfigView() string {
 	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		"",
-		BodyStyle.Render("Provider configuration"),
-		CaptionStyle.Render("(Coming in Milestone 3)"),
+		BodyStyle().Render("Provider configuration"),
+		CaptionStyle().Render("(Coming in Milestone 3)"),
 	)
 
 	centered := lipgloss.NewStyle().
@@ -505,12 +499,12 @@ Views:
 	helpBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		Padding(2, 4).
-		BorderForeground(BrandColor).
+		BorderForeground(brandColor()).
 		Render(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				CardTitleStyle.Render("Keyboard Shortcuts"),
-				BodyStyle.Render(helpText),
+				CardTitleStyle().Render("Keyboard Shortcuts"),
+				BodyStyle().Render(helpText),
 			),
 		)
 
@@ -539,8 +533,8 @@ Views:
 func (m *Model) renderFooter() string {
 	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %d providers", len(m.Providers))
 	return lipgloss.NewStyle().
-		Background(HeaderBgColor).
-		Foreground(TextSecondary).
+		Background(headerBgColor()).
+		Foreground(secondaryColor()).
 		Width(m.Width).
 		Padding(0, 1).
 		Render(status)

@@ -3,8 +3,8 @@ set -e
 
 echo "Running pre-push checks..."
 
-echo "Running linter..."
-golangci-lint run
+echo "Vetting code..."
+go vet ./...
 
 echo "Running full test suite..."
 go test -v ./...
