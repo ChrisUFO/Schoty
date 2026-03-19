@@ -1,0 +1,58 @@
+# Schoty Configuration
+# Copy this file to config.yaml and add your API keys
+#
+# Environment variable overrides:
+#   Set SCHOTY_<PROVIDER>_API_KEY to override config file values
+#   Provider names are converted to uppercase with dashes replaced by underscores
+#   Examples: SCHOTY_OPENAI_API_KEY, SCHOTY_CLAUDE_CODE_API_KEY, SCHOTY_Z_AI_API_KEY
+
+providers:
+  # API Balance Providers (check account balance)
+  - name: OpenAI
+    api_key: "your-openai-api-key"
+    enabled: true
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: Anthropic
+    api_key: "your-anthropic-api-key"
+    enabled: true
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: OpenRouter
+    api_key: "your-openrouter-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: TogetherAI
+    api_key: "your-togetherai-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  # Subscription Providers (check usage limits)
+  - name: Claude Code
+    api_key: "your-claude-code-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: Codex
+    api_key: "your-codex-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: Z.ai
+    api_key: "your-z-ai-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
+
+  - name: MiniMax
+    api_key: "your-minimax-api-key"
+    enabled: false
+    base_url: ""  # Optional: override API endpoint
+    model: ""     # Optional: specify model
