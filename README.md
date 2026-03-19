@@ -31,13 +31,13 @@ git clone https://github.com/ChrisUFO/Schoty.git
 cd Schoty
 
 # Build and run
-cargo build --release
-./target/release/schoty
+go build -o schoty
+./schoty
 ```
 
 ## Tech Stack
 
-Built with Rust for performance and reliability.
+Built with Go and [Bubble Tea](https://github.com/charmbracelet/bubbletea) for the TUI.
 
 ## License
 
