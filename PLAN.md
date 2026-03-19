@@ -1,132 +1,133 @@
-# Project Strategy: Schoty - Milestone 1
+# Project Strategy: Schoty - Milestone 2: TUI Foundation
 
 ## 1. High-Level Strategy
 
-Milestone 1 establishes the foundational project scaffold for Schoty, a TUI AI subscription usage and balance monitor built with Go and Bubble Tea. This phase creates the empty shell project with proper structure, tooling, and development infrastructure before implementing business logic.
+Milestone 2 completes the TUI foundation by wiring up the re-render loop, implementing auto-refresh, and establishing the config layer. This builds on the existing UI skeleton (Dashboard, Detail, Config, Help views) and keyboard navigation from Milestone 1.
 
 **Key Objectives:**
-- Establish Go module with directory structure matching ARCHITECTURE.md
-- Set up Bubble Tea with minimal TUI skeleton
-- Configure Lip Gloss for terminal styling following STYLEGUIDE.md
-- Implement UI components per UIUX.md specifications
-- Add development tooling (Makefile, pre-commit hooks, editorconfig)
-- Create a runnable "Hello World" TUI application
+- Implement auto-refresh timer mechanism in Bubble Tea model
+- Wire `refreshAll()` to trigger actual data fetching via tick messages
+- Create config loading infrastructure (`internal/config/`)
+- Create data models (`internal/models/`)
+- Add subscription tab content to the TUI
+- Ensure proper state management for loading/fetching states
 
-**Planning Complete:**
-- [x] UIUX.md - TUI layout, navigation, and interaction design
-- [x] STYLEGUIDE.md - Visual design system and Lip Gloss styling
+**Dependencies on Milestone 1:**
+- UI model with ViewState, keyboard handling, and view rendering (COMPLETE)
+- Styles system with theme detection (COMPLETE)
+- Provider interface and stub implementations (COMPLETE)
 
 ## 2. Implementation Plan
 
-### Phase 0: UI/UX Planning (COMPLETED)
-- [x] Create UIUX.md with:
-  - Layout architecture (header, tabs, main content, footer)
-  - Navigation patterns and keyboard shortcuts
-  - Component specifications (cards, detail panels, states)
-  - User workflows (first launch, normal use, refresh, error recovery)
-  - Responsive behavior specifications
-- [x] Create STYLEGUIDE.md with:
-  - Color definitions (light/dark terminal support)
-  - Typography styles
-  - Component style definitions
-  - Layout utilities
-  - Animation guidelines
+### Phase 1: Config & Models Layer (COMPLETED)
+- [x] Create `internal/config/config.go`:
+  - [x] Config struct with API keys per provider
+  - [x] Load from `config.yaml` using Viper
+  - [x] Environment variable override support
+  - [x] Provider enable/disable flags
+- [x] Create `internal/models/models.go`:
+  - [x] AppConfig model
+  - [x] ProviderConfig model  
+  - [x] RefreshState model for tracking refresh status
+- [x] Add tests for config loading
 
-### Phase 1: Repository & Module Setup
-- Initialize Go module (`go mod init`)
-- Create directory structure per ARCHITECTURE.md:
-  - `cmd/schoty/` - Application entry points
-  - `internal/config/` - Configuration loading
-  - `internal/models/` - Data structures
-  - `internal/providers/` - API clients (stub placeholders)
-  - `internal/ui/` - TUI components
-  - `internal/ui/views/` - View components
+### Phase 2: Auto-Refresh Timer Foundation (COMPLETED)
+- [x] Add timer command to `Model.Init()` using `time.NewTicker`
+- [x] Implement `tickTimerCmd()` that sends `tickMsg` periodically
+- [x] Handle `tickMsg` in `Update()` to trigger refresh
+- [x] Add `RefreshInterval` field to Model (default 60 seconds)
+- [x] Clean up ticker on quit
 
-### Phase 2: Dependencies
-- Add Bubble Tea (`github.com/charmbracelet/bubbletea`)
-- Add Lip Gloss (`github.com/charmbracelet/lipgloss`)
-- Add Viper (`github.com/spf13/viper`) for configuration
-- Add testing dependencies (stretchr/testify)
+### Phase 3: Provider Integration (COMPLETED)  
+- [x] Create `internal/ui/provider_service.go`:
+  - [x] Function to create provider instances from config
+  - [x] Function to fetch all provider data concurrently
+  - [x] Result channel to return provider states
+- [x] Modify `refreshAll()` to return `tea.Cmd`
+- [x] Wire provider results back to ProviderState in Update()
+- [x] Handle provider errors and set ErrorMsg on ProviderState
+- [x] Update Init() to load config and initialize providers
 
-### Phase 3: UI Foundation (per UIUX.md and STYLEGUIDE.md)
-- Create `cmd/schoty/main.go` entry point
-- Implement minimal Bubble Tea model
-- Create `internal/ui/styles.go` with all style definitions from STYLEGUIDE.md:
-  - Color constants (light/dark mode)
-  - Status colors (healthy/warning/critical/error/loading)
-  - Typography styles (header, body, caption, status)
-  - Component styles (tabs, cards, footer, error)
-  - Progress bar helper function
-  - Spinner animation helper
-- Wire up basic re-render loop
-- Implement theme detection (light/dark terminal)
+### Phase 4: Subscription Tab Content (COMPLETED)
+- [x] Update `renderTabs()` to include "Subscriptions" tab
+- [x] Create subscription-specific view rendering in dashboard
+- [x] Add subscription data display (Used/Limit/Remaining)
+- [x] Differentiate progress bar calculation for usage vs balance
+- [x] Update footer to reflect subscription count
 
-### Phase 4: Development Tooling
-- Create Makefile with targets: `build`, `run`, `test`, `lint`, `fmt`, `clean`
-- Add `.editorconfig` for consistent formatting
-- Set up pre-commit hooks (gofmt, golint, govet, tests)
-- Set up pre-push hooks (run full test suite)
+### Phase 5: Polish & Testing (COMPLETED)
+- [x] Ensure ticker stops on quit
+- [x] Add bounds checking for window resize
+- [x] Create `internal/config/config_test.go` - test config loading, env overrides
+- [x] Create `internal/ui/model_test.go` - test model init, refresh, timer
+- [x] Run full test suite: `go test ./...`
+- [x] Verify lint passes: `go vet ./...`
 
-### Phase 5: Documentation
-- Ensure ARCHITECTURE.md reflects actual structure
-- Add placeholder provider files with interface documentation
+### Phase 6: Structured Logging (COMPLETED - Issue #32)
+- [x] Add `log/slog` standard library for structured logging
+- [x] Replace `fmt.Fprintf` with structured log statements
+- [x] Add log levels (debug, info, warn, error)
+- [x] Add contextual fields (provider name, request duration, etc.)
+- [x] Create `internal/logging/logger.go` for centralized logger setup
+
+### Phase 7: Graceful Shutdown (COMPLETED - Issue #33)
+- [x] Add signal handling for SIGINT/SIGTERM
+- [x] Create shutdown channel to coordinate cleanup
+- [x] Stop ticker and cleanup resources on shutdown
+- [x] Handle shutdown in main.go before tea.Program.Start()
+
+### Phase 8: Help Flag (COMPLETED - Issue #35)
+- [x] Add `flag` package for CLI flag parsing
+- [x] Add `-h` and `--help` flags to main.go
+- [x] Display usage information and exit cleanly
+- [x] Suppress TUI startup when help is requested
+
+### Phase 9: Hardening & Polish (COMPLETED)
+- [x] Fix division by zero in Detail View for balance providers
+- [x] Fix Detail View data mismatch (balance vs subscription rendering)
+- [x] Add empty tab state message when no providers in filtered view
+- [x] Add 30s network timeout to FetchAllProviders
+- [x] Fix footer to show filtered provider count ("X of Y providers")
+- [x] Fix signal handler goroutine cleanup with sync.WaitGroup
 
 ## 3. Execution Checklist
 
-### Planning (COMPLETED)
-- [x] Create UIUX.md with detailed TUI design specifications
-- [x] Create STYLEGUIDE.md with Lip Gloss styling system
-- [x] Update README.md to reference UI/UX and Style Guide docs
+### Git Operations (COMPLETED)
+- [x] Create feature branch: `git checkout -b milestone-2-tui-foundation`
+- [x] Commit all Milestone 2 changes
+- [x] Push branch: `git push -u origin milestone-2-tui-foundation`
 
-### Repository & Module Setup
-- [ ] Initialize Go module: `go mod init github.com/ChrisUFO/Schoty`
-- [ ] Create `cmd/schoty/` directory
-- [ ] Create `internal/config/` directory
-- [ ] Create `internal/models/` directory
-- [ ] Create `internal/providers/` directory
-- [ ] Create `internal/ui/` directory
-- [ ] Create `internal/ui/views/` directory
+### Files Created/Modified
 
-### Dependencies
-- [ ] Add Bubble Tea: `go get github.com/charmbracelet/bubbletea`
-- [ ] Add Lip Gloss: `go get github.com/charmbracelet/lipgloss`
-- [ ] Add Viper: `go get github.com/spf13/viper`
-- [ ] Add Testify: `go get github.com/stretchr/testify`
+**Phase 1:**
+- `internal/config/config.go` (NEW)
+- `internal/config/config_test.go` (NEW)
+- `internal/models/models.go` (NEW)
 
-### UI Foundation (UIUX.md + STYLEGUIDE.md)
-- [ ] Create `cmd/schoty/main.go` with Bubble Tea program structure
-- [ ] Create `internal/ui/styles.go` with complete style system:
-  - [ ] Color constants (light/dark mode)
-  - [ ] Status color functions
-  - [ ] Typography style definitions
-  - [ ] Tab styles (active/inactive)
-  - [ ] Card styles
-  - [ ] Progress bar rendering function
-  - [ ] Spinner animation function
-  - [ ] Theme detection function
-- [ ] Create `internal/ui/model.go` with minimal Tea model
-- [ ] Implement keyboard handler stubs for navigation
-- [ ] Verify TUI compiles and runs (`make run`)
+**Phase 2:**
+- `internal/ui/model.go` (MODIFIED)
 
-### Development Tooling
-- [ ] Create Makefile with `build`, `run`, `test`, `lint`, `fmt`, `clean` targets
-- [ ] Create `.editorconfig` with Go formatting conventions
-- [ ] Create `.git/hooks/pre-commit` with fmt, lint, vet, test checks
-- [ ] Create `.git/hooks/pre-push` with full test suite
-- [ ] Install git hooks: `git config core.hooksPath .git/hooks`
+**Phase 3:**
+- `internal/ui/provider_service.go` (NEW)
 
-### Documentation
-- [ ] Verify ARCHITECTURE.md matches created structure
-- [ ] Create placeholder `internal/providers/*.go` stub files with interface documentation
+**Phase 4:**
+- `internal/ui/model.go` (MODIFIED - added provider types and filtering)
 
-### Testing
-- [ ] Create `cmd/schoty/main_test.go` - smoke test for app initialization
-- [ ] Create `internal/ui/model_test.go` - test model initialization
-- [ ] Create `internal/ui/styles_test.go` - test style constants
-- [ ] Run full test suite: `make test`
-- [ ] Verify lint passes: `make lint`
+**Phase 5:**
+- `internal/ui/model_test.go` (NEW)
+- `go.mod`, `go.sum` (MODIFIED - added viper, testify deps)
 
-### Git Operations
-- [ ] Create feature branch: `git checkout -b milestone-1-project-scaffold`
-- [ ] Commit all Milestone 1 changes
-- [ ] Push branch: `git push -u origin milestone-1-project-scaffold`
+**Phase 6 (NEW):**
+- `internal/logging/logger.go` (NEW)
+- `cmd/schoty/main.go` (MODIFIED - add structured logging)
+
+**Phase 7 (NEW):**
+- `cmd/schoty/main.go` (MODIFIED - add signal handling)
+
+**Phase 8 (NEW):**
+- `cmd/schoty/main.go` (MODIFIED - add flag parsing for help)
+
+**Phase 9:**
+- `internal/ui/model.go` (MODIFIED - detail view fixes, empty tab state, footer count)
+- `internal/ui/provider_service.go` (MODIFIED - add timeout to FetchAllProviders)
+- `cmd/schoty/main.go` (MODIFIED - signal handler cleanup)

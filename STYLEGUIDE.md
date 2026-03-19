@@ -9,70 +9,55 @@ This style guide defines the visual design system for Schoty's TUI using Lip Glo
 - **Consistency**: Same styles applied everywhere for element type
 - **Clarity**: High contrast, readable at various terminal sizes
 - **Brevity**: Compact representations, no wasted space
-- **Terminal-native**: Works in both light and dark terminals
+- **Dark-first**: Optimized for dark terminal backgrounds (the common case)
 
 ## Color Definitions
+
+All colors are optimized for dark terminal backgrounds. Most terminals use dark themes by default, so we prioritize readability on dark backgrounds.
 
 ### Brand Colors
 
 ```go
 // Primary brand color for headers and emphasis
-var BrandColor = lipgloss.Color("#0066CC")
-
-// Brand for dark terminals
-var BrandColorDark = lipgloss.Color("#4DA6FF")
+var BrandColor = lipgloss.Color("#EA580C")
 ```
 
 ### Status Colors
 
 ```go
 // Healthy status (>50% remaining)
-var StatusHealthy = lipgloss.Color("#008800")
-var StatusHealthyDark = lipgloss.Color("#00CC00")
+var StatusHealthy = lipgloss.Color("#22C55E")
 
 // Warning status (20-50% remaining)
-var StatusWarning = lipgloss.Color("#CC8800")
-var StatusWarningDark = lipgloss.Color("#FFB300")
+var StatusWarning = lipgloss.Color("#FACC15")
 
 // Critical status (<20% remaining)
-var StatusCritical = lipgloss.Color("#CC0000")
-var StatusCriticalDark = lipgloss.Color("#FF4444")
+var StatusCritical = lipgloss.Color("#EF4444")
 
 // Error status (API failure)
-var StatusError = lipgloss.Color("#8800CC")
-var StatusErrorDark = lipgloss.Color("#AA66FF")
+var StatusError = lipgloss.Color("#FB7185")
 
 // Loading state
-var StatusLoading = lipgloss.Color("#666666")
-var StatusLoadingDark = lipgloss.Color("#999999")
+var StatusLoading = lipgloss.Color("#78716C")
 ```
 
 ### Background Colors
 
 ```go
-// Light terminal backgrounds
-var BackgroundLight = lipgloss.Color("#FFFFFF")
-var HeaderBgLight = lipgloss.Color("#E5E5E5")
-var CardBgLight = lipgloss.Color("#F5F5F5")
-
 // Dark terminal backgrounds
-var BackgroundDark = lipgloss.Color("#1A1A1A")
-var HeaderBgDark = lipgloss.Color("#2D2D2D")
-var CardBgDark = lipgloss.Color("#2D2D2D")
+var Background = lipgloss.Color("#1A1A1A")
+var HeaderBg = lipgloss.Color("#2D2D2D")
+var CardBg = lipgloss.Color("#2D2D2D")
 ```
 
 ### Text Colors
 
 ```go
-// Light terminal text
-var TextPrimaryLight = lipgloss.Color("#1A1A1A")
-var TextSecondaryLight = lipgloss.Color("#666666")
-var TextMutedLight = lipgloss.Color("#999999")
-
-// Dark terminal text
-var TextPrimaryDark = lipgloss.Color("#E5E5E5")
-var TextSecondaryDark = lipgloss.Color("#AAAAAA")
-var TextMutedDark = lipgloss.Color("#888888")
+// Text for dark terminals
+var TextPrimary = lipgloss.Color("#E5E5E5")
+var TextSecondary = lipgloss.Color("#AAAAAA")
+var TextMuted = lipgloss.Color("#9CA3AF")
+var TabInactive = lipgloss.Color("#6B7280")
 ```
 
 ## Typography Styles
@@ -108,8 +93,8 @@ var StatusStyle = lipgloss.NewStyle().
 
 ```go
 var HeaderStyle = lipgloss.NewStyle().
-    Background(HeaderBgLight).
-    Foreground(TextPrimaryLight).
+    Background(HeaderBg).
+    Foreground(TextPrimary).
     Padding(0, 1).
     Width(width).
     Bold(true)
@@ -120,13 +105,13 @@ var HeaderStyle = lipgloss.NewStyle().
 ```go
 var TabActiveStyle = lipgloss.NewStyle().
     Background(BrandColor).
-    Foreground(BackgroundLight).
+    Foreground(Background).
     Padding(0, 2).
     Bold(true)
 
 var TabInactiveStyle = lipgloss.NewStyle().
-    Background(BackgroundLight).
-    Foreground(TextSecondaryLight).
+    Background(Background).
+    Foreground(TabInactive).
     Padding(0, 2)
 ```
 
@@ -134,17 +119,17 @@ var TabInactiveStyle = lipgloss.NewStyle().
 
 ```go
 var CardStyle = lipgloss.NewStyle().
-    Background(CardBgLight).
+    Background(CardBg).
     Border(lipgloss.RoundedBorder()).
     Padding(1, 2).
     Width(40)
 
 var CardTitleStyle = lipgloss.NewStyle().
     Bold(true).
-    Foreground(TextPrimaryLight)
+    Foreground(TextPrimary)
 
 var CardValueStyle = lipgloss.NewStyle().
-    Foreground(TextPrimaryLight).
+    Foreground(TextPrimary).
     Align(lipgloss.Right)
 ```
 
@@ -166,8 +151,8 @@ func ProgressBar(percent float64, width int) string {
 
 ```go
 var FooterStyle = lipgloss.NewStyle().
-    Background(HeaderBgLight).
-    Foreground(TextSecondaryLight).
+    Background(HeaderBg).
+    Foreground(TextSecondary).
     Padding(0, 1).
     Width(width)
 ```
@@ -217,18 +202,6 @@ const (
     CardWidth = 40
     ProgressBarWidth = 10
 )
-```
-
-## Dark/Light Mode Detection
-
-```go
-func DetectColorMode() string {
-    // Check terminal background color or environment
-    // Default to light if detection fails
-    return "light"
-}
-
-var IsDarkMode = DetectColorMode() == "dark"
 ```
 
 ## Animation
@@ -290,7 +263,7 @@ func GetStatusColor(percent float64) lipgloss.Color {
 
 ## Best Practices
 
-1. **Always define both light and dark mode styles**
+1. **Always use high-contrast colors for text on dark backgrounds**
 2. **Use constants for repeated colors and sizes**
 3. **Test at 80x24 minimum and 120x40 optimal**
 4. **Ensure text has enough contrast against backgrounds**
@@ -306,23 +279,24 @@ Styles should be defined in `internal/ui/styles.go` following the structure:
 ```go
 package ui
 
-// Color constants
-var (...)
+// Color functions (return dark-theme optimized colors)
+func bgColor() lipgloss.Color { ... }
+func fgColor() lipgloss.Color { ... }
+func brandColor() lipgloss.Color { ... }
+// ... etc
 
-// Style constants
-var (...)
+// Style functions
+func HeaderStyle() lipgloss.Style { ... }
+func CardStyle() lipgloss.Style { ... }
+// ... etc
 
 // Helper functions
 func (...)
-
-// Theme detection
-var IsDarkMode bool
 ```
 
 ## Testing Styles
 
 Verify styles render correctly by testing:
-- Light terminal backgrounds
-- Dark terminal backgrounds
+- Dark terminal backgrounds (primary target)
 - Various terminal sizes (80x24, 120x40, 200x50)
 - All status states (healthy, warning, critical, error, loading)

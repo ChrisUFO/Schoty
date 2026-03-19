@@ -2,7 +2,6 @@ package ui
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -18,155 +17,56 @@ const (
 	ProgressBarWidth = 10
 )
 
-var IsDarkMode bool
-
-func DetectColorMode() bool {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return true
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return true
-	}
-	if os.Getenv("TERM") == "xterm-256color" || os.Getenv("TERM") == "screen-256color" {
-		return true
-	}
-	return false
-}
-
 func bgColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#1A1A1A")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#1A1A1A")
-	}
-	return lipgloss.Color("#FFFFFF")
-}
-
-func fgColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#E5E5E5")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#E5E5E5")
-	}
 	return lipgloss.Color("#1A1A1A")
 }
 
-func headerBgColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#2D2D2D")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#2D2D2D")
-	}
+func fgColor() lipgloss.Color {
 	return lipgloss.Color("#E5E5E5")
 }
 
+func headerBgColor() lipgloss.Color {
+	return lipgloss.Color("#2D2D2D")
+}
+
 func cardBgColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#2D2D2D")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#2D2D2D")
-	}
-	return lipgloss.Color("#F5F5F5")
+	return lipgloss.Color("#2D2D2D")
 }
 
 func secondaryColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#AAAAAA")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#AAAAAA")
-	}
-	return lipgloss.Color("#666666")
+	return lipgloss.Color("#AAAAAA")
 }
 
 func mutedColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#888888")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#888888")
-	}
-	return lipgloss.Color("#999999")
+	return lipgloss.Color("#9CA3AF")
 }
 
 func brandColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#4DA6FF")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#4DA6FF")
-	}
-	return lipgloss.Color("#0066CC")
+	return lipgloss.Color("#EA580C")
 }
 
 func tabInactiveColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#888888")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#888888")
-	}
-	return lipgloss.Color("#666666")
+	return lipgloss.Color("#6B7280")
 }
 
 func statusHealthyColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#00CC00")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#00CC00")
-	}
-	return lipgloss.Color("#008800")
+	return lipgloss.Color("#22C55E")
 }
 
 func statusWarningColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#FFB300")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#FFB300")
-	}
-	return lipgloss.Color("#CC8800")
+	return lipgloss.Color("#FACC15")
 }
 
 func statusCriticalColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#FF4444")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#FF4444")
-	}
-	return lipgloss.Color("#CC0000")
+	return lipgloss.Color("#EF4444")
 }
 
 func statusErrorColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#AA66FF")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#AA66FF")
-	}
-	return lipgloss.Color("#8800CC")
+	return lipgloss.Color("#FB7185")
 }
 
 func statusLoadingColor() lipgloss.Color {
-	if os.Getenv("TERM_PROGRAM") == "Apple_Terminal" {
-		return lipgloss.Color("#999999")
-	}
-	if os.Getenv("ColorTerm") == "truecolor" || os.Getenv("ColorTerm") == "24bit" {
-		return lipgloss.Color("#999999")
-	}
-	return lipgloss.Color("#666666")
-}
-
-func InitTheme() {
-	IsDarkMode = os.Getenv("TERM_PROGRAM") == "Apple_Terminal" ||
-		os.Getenv("ColorTerm") == "truecolor" ||
-		os.Getenv("ColorTerm") == "24bit"
+	return lipgloss.Color("#78716C")
 }
 
 func HeaderStyle() lipgloss.Style {

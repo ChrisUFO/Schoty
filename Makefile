@@ -2,9 +2,11 @@
 
 BINARY=schoty
 MAIN_PATH=./cmd/schoty
+VERSION?=dev
+LDFLAGS=-ldflags "-X main.version=$(VERSION)"
 
 build:
-	go build -o $(BINARY) $(MAIN_PATH)
+	go build $(LDFLAGS) -o $(BINARY) $(MAIN_PATH)
 
 run: build
 	./$(BINARY)

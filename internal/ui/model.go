@@ -1,9 +1,13 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"time"
 
+	"github.com/ChrisUFO/Schoty/internal/config"
+	"github.com/ChrisUFO/Schoty/internal/logging"
+	"github.com/ChrisUFO/Schoty/internal/providers"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -17,10 +21,22 @@ const (
 	HelpView
 )
 
-const numTabs = 3
+const (
+	numTabs                = 3
+	DefaultRefreshInterval = 60 * time.Second
+	TabAPIBalances         = 0
+	TabSubscriptions       = 1
+	TabConfig              = 2
+)
+
+const (
+	ProviderTypeBalance      = "balance"
+	ProviderTypeSubscription = "subscription"
+)
 
 type ProviderState struct {
 	Name         string
+	Type         string
 	Balance      float64
 	Usage        int
 	Remaining    int
@@ -42,10 +58,14 @@ type Model struct {
 	Providers        []ProviderState
 	ShowHelp         bool
 	frame            int
+	RefreshInterval  time.Duration
+	ticker           *time.Ticker
+	quit             chan struct{}
+	providerList     []providers.Provider
+	refreshCmd       tea.Cmd
 }
 
 func NewModel() Model {
-	InitTheme()
 	return Model{
 		Ready:            false,
 		Width:            80,
@@ -57,23 +77,67 @@ func NewModel() Model {
 		Providers:        []ProviderState{},
 		ShowHelp:         false,
 		frame:            0,
+		RefreshInterval:  DefaultRefreshInterval,
+		ticker:           nil,
+		quit:             make(chan struct{}),
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
-	return nil
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		logging.Error("failed to load config", "error", err)
+	} else if cfg != nil {
+		m.providerList = CreateProvidersFromConfig(cfg)
+		if len(m.providerList) == 0 {
+			m.Providers = []ProviderState{}
+		}
+	}
+	m.ticker = time.NewTicker(m.RefreshInterval)
+	return m.tickTimerCmd()
+}
+
+func (m *Model) tickTimerCmd() tea.Cmd {
+	return func() tea.Msg {
+		select {
+		case <-m.ticker.C:
+			return tickMsg(time.Now())
+		case <-m.quit:
+			return nil
+		}
+	}
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		m.handleKeyPress(msg)
+		switch msg.String() {
+		case "q", "ctrl+c":
+			if m.ticker != nil {
+				m.ticker.Stop()
+				select {
+				case <-m.ticker.C:
+				default:
+				}
+				close(m.quit)
+			}
+			return m, tea.Quit
+		case "r":
+			return m, m.refreshAll()
+		default:
+			m.handleKeyPress(msg)
+		}
 	case tea.WindowSizeMsg:
 		m.Ready = true
 		m.Width = msg.Width
 		m.Height = msg.Height
 	case tickMsg:
 		m.LastRefresh = time.Now()
+		return m, m.refreshAll()
+	case refreshResultMsg:
+		results := []ProviderResult(msg)
+		m.Providers = ProviderResultsToStates(results)
+		return m, nil
 	}
 	return m, nil
 }
@@ -90,8 +154,6 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 		} else {
 			m.CurrentView = ConfigView
 		}
-	case "r":
-		m.refreshAll()
 	case "tab":
 		m.Tab = (m.Tab + 1) % numTabs
 	case "1", "2", "3", "4", "5", "6", "7", "8":
@@ -137,11 +199,18 @@ func (m *Model) handleKeyPress(msg tea.KeyMsg) {
 
 type tickMsg time.Time
 
-func (m *Model) refreshAll() {
+func (m *Model) refreshAll() tea.Cmd {
 	for i := range m.Providers {
 		m.Providers[i].IsLoading = true
+		m.Providers[i].ErrorMsg = ""
+	}
+	return func() tea.Msg {
+		results := FetchAllProviders(context.Background(), m.providerList)
+		return refreshResultMsg(results)
 	}
 }
+
+type refreshResultMsg []ProviderResult
 
 func (m *Model) View() string {
 	if !m.Ready {
@@ -271,13 +340,37 @@ func (m *Model) renderDashboard() string {
 	)
 }
 
-func (m *Model) renderProviderList() string {
-	var rows []string
+func (m *Model) getFilteredProviders() []ProviderState {
+	var filtered []ProviderState
+	for _, p := range m.Providers {
+		switch m.Tab {
+		case TabAPIBalances:
+			if p.Type == ProviderTypeBalance || p.Type == "" {
+				filtered = append(filtered, p)
+			}
+		case TabSubscriptions:
+			if p.Type == ProviderTypeSubscription {
+				filtered = append(filtered, p)
+			}
+		default:
+			filtered = append(filtered, p)
+		}
+	}
+	return filtered
+}
 
-	for i, p := range m.Providers {
+func (m *Model) renderProviderList() string {
+	filteredProviders := m.getFilteredProviders()
+
+	if len(filteredProviders) == 0 {
+		return m.renderEmptyTabState()
+	}
+
+	var rows []string
+	for i, p := range filteredProviders {
 		row := m.renderProviderRow(p, i)
 		rows = append(rows, row)
-		if i < len(m.Providers)-1 {
+		if i < len(filteredProviders)-1 {
 			rows = append(rows, "")
 		}
 	}
@@ -295,6 +388,41 @@ func (m *Model) renderProviderList() string {
 	return contentStyle.Render(lines)
 }
 
+func (m *Model) renderEmptyTabState() string {
+	var message string
+	switch m.Tab {
+	case TabAPIBalances:
+		message = "No API Balance providers configured"
+	case TabSubscriptions:
+		message = "No Subscription providers configured"
+	default:
+		message = "No providers in this category"
+	}
+
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		Padding(3, 5).
+		Width(45).
+		Align(lipgloss.Center, lipgloss.Center).
+		BorderForeground(brandColor()).
+		Render(
+			lipgloss.JoinVertical(
+				lipgloss.Center,
+				BodyStyle().Render(message),
+				"",
+				CaptionStyle().Render("Press [c] to configure providers"),
+			),
+		)
+
+	centered := lipgloss.NewStyle().
+		Width(m.Width).
+		Height(m.Height-6).
+		Align(lipgloss.Center, lipgloss.Center).
+		Render(box)
+
+	return centered
+}
+
 func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 	status := StatusIndicator(p.Status)
 	nameStyle := lipgloss.NewStyle().Foreground(fgColor()).Bold(idx == m.SelectedProvider)
@@ -303,6 +431,13 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 
 	var valueStr string
 	var progressStr string
+	var label string
+
+	if p.Type == ProviderTypeSubscription {
+		label = "Subscription"
+	} else {
+		label = "API Balance"
+	}
 
 	if p.IsLoading {
 		valueStr = CaptionStyle().Render("Fetching...")
@@ -311,9 +446,14 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 		valueStr = ErrorStyle().Render(p.ErrorMsg)
 		progressStr = ""
 	} else if p.IsConfigured {
-		valueStr = fmt.Sprintf("$%.2f remaining", p.Balance)
-		percent := float64(p.Remaining*100) / float64(p.Limit)
-		progressStr = ProgressBarSimple(percent)
+		if p.Type == ProviderTypeSubscription {
+			valueStr = fmt.Sprintf("%d remaining", p.Remaining)
+			percent := float64(p.Remaining*100) / float64(p.Limit)
+			progressStr = ProgressBarSimple(percent)
+		} else {
+			valueStr = fmt.Sprintf("$%.2f", p.Balance)
+			progressStr = "---"
+		}
 	} else {
 		valueStr = CaptionStyle().Render("Not configured")
 		progressStr = CaptionStyle().Render("—")
@@ -328,7 +468,7 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 
 	progress := lipgloss.JoinHorizontal(
 		lipgloss.Left,
-		"  "+CaptionStyle().Render("API Balance"),
+		"  "+CaptionStyle().Render(label),
 		"  "+CaptionStyle().Render(progressStr),
 	)
 
@@ -340,21 +480,28 @@ func (m *Model) renderProviderRow(p ProviderState, idx int) string {
 }
 
 func (m *Model) renderEmptyState() string {
+	title := BodyStyle().Bold(true).Render("No providers configured")
+	subtitle := CaptionStyle().Render("Add providers by:")
+	step1 := CaptionStyle().Render("1. Creating config.yaml with provider settings")
+	step2 := CaptionStyle().Render("2. Or setting SCHOTY_<PROVIDER>_API_KEY env vars")
+	footer := CaptionStyle().Render("See README.md for configuration details")
+
+	content := lipgloss.JoinVertical(
+		lipgloss.Center,
+		title,
+		"",
+		subtitle,
+		step1,
+		step2,
+		"",
+		footer,
+	)
+
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		Padding(3, 5).
-		Width(45).
-		Align(lipgloss.Center, lipgloss.Center).
+		Padding(1, 2).
 		BorderForeground(brandColor()).
-		Render(
-			lipgloss.JoinVertical(
-				lipgloss.Center,
-				BodyStyle().Render("No providers configured"),
-				"",
-				CaptionStyle().Render("Press [c] to add API keys"),
-				CaptionStyle().Render("and configure your providers"),
-			),
-		)
+		Render(content)
 
 	centered := lipgloss.NewStyle().
 		Width(m.Width).
@@ -383,24 +530,46 @@ func (m *Model) renderDetailView() string {
 		Width(m.Width).
 		Render(header)
 
-	balance := fmt.Sprintf("Balance:     $%.2f", p.Balance)
-	usage := fmt.Sprintf("Usage:       %d / %d", p.Limit-p.Remaining, p.Limit)
-	remaining := fmt.Sprintf("Remaining:   %d", p.Remaining)
 	lastUpdated := fmt.Sprintf("Last Updated: %s", m.LastRefresh.Format("15:04:05"))
 
-	percent := float64(p.Remaining*100) / float64(p.Limit)
-	progress := ProgressBarSimple(percent)
-
-	details := lipgloss.JoinVertical(
-		lipgloss.Left,
-		BodyStyle().Render(balance),
-		BodyStyle().Render(usage),
-		BodyStyle().Render(remaining),
-		"",
-		CaptionStyle().Render(progress),
-		"",
-		CaptionStyle().Render(lastUpdated),
-	)
+	var details string
+	if p.Type == ProviderTypeSubscription {
+		usage := fmt.Sprintf("Usage:       %d / %d", p.Usage, p.Limit)
+		remaining := fmt.Sprintf("Remaining:   %d", p.Remaining)
+		var progress string
+		if p.Limit > 0 {
+			percent := float64(p.Remaining*100) / float64(p.Limit)
+			progress = ProgressBarSimple(percent)
+		} else {
+			progress = "N/A"
+		}
+		details = lipgloss.JoinVertical(
+			lipgloss.Left,
+			BodyStyle().Render(usage),
+			BodyStyle().Render(remaining),
+			"",
+			CaptionStyle().Render(progress),
+			"",
+			CaptionStyle().Render(lastUpdated),
+		)
+	} else {
+		balance := fmt.Sprintf("Balance:     $%.2f", p.Balance)
+		var statusStr string
+		if p.Balance > 0 {
+			statusStr = "Available"
+		} else if p.Balance == 0 {
+			statusStr = "No credit remaining"
+		} else {
+			statusStr = "Overage"
+		}
+		details = lipgloss.JoinVertical(
+			lipgloss.Left,
+			BodyStyle().Render(balance),
+			BodyStyle().Render(fmt.Sprintf("Status:      %s", statusStr)),
+			"",
+			CaptionStyle().Render(lastUpdated),
+		)
+	}
 
 	back := CaptionStyle().Render("[←] Back   [r] Refresh   [e] Edit Config")
 
@@ -531,7 +700,18 @@ Views:
 }
 
 func (m *Model) renderFooter() string {
-	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %d providers", len(m.Providers))
+	var providerCount string
+	if m.CurrentView == DashboardView {
+		filtered := m.getFilteredProviders()
+		if len(filtered) == len(m.Providers) {
+			providerCount = fmt.Sprintf("%d providers", len(m.Providers))
+		} else {
+			providerCount = fmt.Sprintf("%d of %d providers", len(filtered), len(m.Providers))
+		}
+	} else {
+		providerCount = fmt.Sprintf("%d providers", len(m.Providers))
+	}
+	status := fmt.Sprintf("[q] quit  [r] refresh  [tab] tabs  [c] config  [?] help  │ %s", providerCount)
 	return lipgloss.NewStyle().
 		Background(headerBgColor()).
 		Foreground(secondaryColor()).
