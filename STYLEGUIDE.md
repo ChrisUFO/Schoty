@@ -19,7 +19,7 @@ All colors are optimized for dark terminal backgrounds. Most terminals use dark 
 
 ```go
 // Primary brand color for headers and emphasis
-var BrandColor = lipgloss.Color("#3B82F6")
+var BrandColor = lipgloss.Color("#EA580C")
 ```
 
 ### Status Colors
@@ -29,16 +29,16 @@ var BrandColor = lipgloss.Color("#3B82F6")
 var StatusHealthy = lipgloss.Color("#22C55E")
 
 // Warning status (20-50% remaining)
-var StatusWarning = lipgloss.Color("#F59E0B")
+var StatusWarning = lipgloss.Color("#FACC15")
 
 // Critical status (<20% remaining)
 var StatusCritical = lipgloss.Color("#EF4444")
 
 // Error status (API failure)
-var StatusError = lipgloss.Color("#EC4899")
+var StatusError = lipgloss.Color("#FB7185")
 
 // Loading state
-var StatusLoading = lipgloss.Color("#06B6D4")
+var StatusLoading = lipgloss.Color("#78716C")
 ```
 
 ### Background Colors
